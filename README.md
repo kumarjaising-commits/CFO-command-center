@@ -1,5 +1,7 @@
 # AIB CFO command center (prototype)
 
+Author: kjaising
+
 Static site, no build step. Sample data only.
 
 ## Run locally

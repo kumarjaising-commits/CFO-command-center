@@ -13,8 +13,8 @@
   --aib-ink-soft: #2a1448;
   --aib-accent: #3fb9a0;
 
-  --font-anthropic-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-anthropic-serif: "DM Serif Display", Georgia, "Times New Roman", serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "DM Serif Display", Georgia, "Times New Roman", serif;
 
   --color-fg: #1b1530;
   --color-fg-muted: #5f5873;
@@ -57,7 +57,7 @@
 
 * { -webkit-font-smoothing: antialiased; }
 html { scroll-padding-top: 56px; }
-body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-body); line-height: 1.45; }
+body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-sans); font-size: var(--cds-font-size-body); line-height: 1.45; }
 
 /* ---- branded header ---- */
 .brand { background: var(--aib-ink); border-bottom: 4px solid var(--aib-accent); color: #fff; }
@@ -66,7 +66,7 @@ body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-fami
 .brand-rule { width: 1px; align-self: stretch; background: rgba(255, 255, 255, 0.22); min-height: 40px; }
 .brand-title { flex: 1 1 18rem; min-width: 0; }
 .brand-eyebrow { margin: 0 0 2px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--aib-accent); font-weight: 500; }
-.brand-h1 { margin: 0; font-family: var(--font-anthropic-serif); font-weight: 400; font-size: clamp(26px, 4vw, 38px); line-height: 1.1; color: #fff; }
+.brand-h1 { margin: 0; font-family: var(--font-serif); font-weight: 400; font-size: clamp(26px, 4vw, 38px); line-height: 1.1; color: #fff; }
 .brand-meta { margin: 0; font-size: 12px; line-height: 1.5; color: rgba(255, 255, 255, 0.72); text-align: right; }
 .brand-meta strong { color: #fff; font-weight: 500; }
 @media (max-width: 640px) { .brand-meta { text-align: left; } .brand-rule { display: none; } }
