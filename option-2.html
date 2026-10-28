@@ -1,0 +1,992 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIB CFO Command Center — Board Intelligence</title>
+<meta name="author" content="kjaising">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<!-- Built from option-2.src.css and tailwind.config.js; see README -->
+<link rel="stylesheet" href="option-2.css">
+<style>
+  @media print {
+    .no-print { display: none !important; }
+    body { background-color: #ffffff !important; color: #0f172a !important; }
+    .page-content { display: block !important; page-break-after: always; }
+    .card-shadow { box-shadow: none !important; border: 1px solid #cbd5e1 !important; }
+  }
+  .card-shadow {
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+  }
+  .card-shadow-lg {
+    box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.04), 0 4px 6px -4px rgba(15, 23, 42, 0.02);
+  }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body class="bg-[#F8FAFC] text-navy-900 font-sans antialiased min-h-screen flex flex-col selection:bg-brand-blue/20 selection:text-brand-blue">
+
+  <!-- ========================================== -->
+  <!-- 1. TOP POWER BI / FABRIC BRAND BAR         -->
+  <!-- ========================================== -->
+  <header class="bg-navy-900 text-white border-b border-navy-800 sticky top-0 z-40 no-print">
+    <div class="max-w-[1700px] mx-auto px-4 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3 bg-navy-800/80 px-3 py-1.5 rounded-lg border border-navy-700/60">
+          <div class="w-7 h-7 bg-brand-blue text-white rounded font-display font-bold flex items-center justify-center text-sm tracking-wider shadow-sm">
+            AIB
+          </div>
+          <div class="h-5 w-[1px] bg-navy-700"></div>
+          <span class="text-xs font-semibold tracking-wider text-navy-200 uppercase">Power BI Service &bull; Executive Fabric</span>
+        </div>
+        <div>
+          <h1 class="text-base lg:text-lg font-semibold tracking-tight text-white flex items-center space-x-2">
+            <span>AIB CFO Command Center</span>
+            <span class="text-navy-400 font-normal text-xs">&mdash; Board Intelligence</span>
+          </h1>
+        </div>
+      </div>
+
+      <!-- Controls, Filters & Actions -->
+      <div class="flex items-center flex-wrap gap-3">
+        <!-- Design option switch (shared with index.html) -->
+        <nav class="flex items-center bg-navy-800 rounded-md border border-navy-700 p-0.5 text-xs font-medium" aria-label="Design options">
+          <a href="index.html" data-opt-link class="px-2.5 py-1 rounded text-navy-300 hover:text-white transition-colors">Option 1</a>
+          <a href="option-2.html" data-opt-link aria-current="page" class="px-2.5 py-1 rounded bg-brand-blue text-white">Option 2</a>
+        </nav>
+
+        <!-- Period Selector -->
+        <div class="flex items-center bg-navy-800 rounded-md border border-navy-700 text-xs px-2.5 py-1.5">
+          <svg class="w-3.5 h-3.5 text-navy-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span class="text-navy-400 mr-2">Reporting Period:</span>
+          <select id="periodSelect" onchange="handlePeriodChange(this.value)" class="bg-transparent text-white font-medium outline-none cursor-pointer">
+            <option value="sep26" class="bg-navy-900 text-white" selected>YTD Sep 2026 (Close)</option>
+            <option value="q3_2026" class="bg-navy-900 text-white">Q3 2026 Board Deck</option>
+            <option value="aug26" class="bg-navy-900 text-white">YTD Aug 2026</option>
+          </select>
+        </div>
+
+        <!-- Export / Print Button -->
+        <button onclick="window.print()" class="flex items-center space-x-1.5 bg-brand-blue hover:bg-brand-blueHover text-white px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          <span>Export Board Deck (PDF)</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 2. POWER BI TAB SWITCHER NAV               -->
+  <!-- ========================================== -->
+  <nav class="bg-white border-b border-navy-200 no-print sticky top-[57px] z-30 shadow-sm">
+    <div class="max-w-[1700px] mx-auto px-4 lg:px-8 flex space-x-1 overflow-x-auto scrollbar-none" aria-label="Report pages">
+      <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn active py-3 px-4 text-xs font-semibold text-brand-blue border-b-2 border-brand-blue flex items-center space-x-2 whitespace-nowrap transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        <span>1. Executive Overview</span>
+      </button>
+      <button onclick="switchTab('pnl')" id="tab-btn-pnl" class="tab-btn py-3 px-4 text-xs font-medium text-navy-500 hover:text-navy-900 border-b-2 border-transparent flex items-center space-x-2 whitespace-nowrap transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span>2. P&L Deep-Dive</span>
+      </button>
+      <button onclick="switchTab('balance')" id="tab-btn-balance" class="tab-btn py-3 px-4 text-xs font-medium text-navy-500 hover:text-navy-900 border-b-2 border-transparent flex items-center space-x-2 whitespace-nowrap transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+        <span>3. Balance Sheet & Capital</span>
+      </button>
+      <button onclick="switchTab('budget')" id="tab-btn-budget" class="tab-btn py-3 px-4 text-xs font-medium text-navy-500 hover:text-navy-900 border-b-2 border-transparent flex items-center space-x-2 whitespace-nowrap transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>4. 2027 Budget</span>
+      </button>
+      <button onclick="switchTab('close')" id="tab-btn-close" class="tab-btn py-3 px-4 text-xs font-medium text-navy-500 hover:text-navy-900 border-b-2 border-transparent flex items-center space-x-2 whitespace-nowrap transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>5. Close & Controls</span>
+      </button>
+      <button onclick="switchTab('reg')" id="tab-btn-reg" class="tab-btn py-3 px-4 text-xs font-medium text-navy-500 hover:text-navy-900 border-b-2 border-transparent flex items-center space-x-2 whitespace-nowrap transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <span>6. Regulatory & Audit</span>
+      </button>
+      <button onclick="switchTab('savings')" id="tab-btn-savings" class="tab-btn py-3 px-4 text-xs font-medium text-navy-500 hover:text-navy-900 border-b-2 border-transparent flex items-center space-x-2 whitespace-nowrap transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        <span>7. Savings Pipeline</span>
+      </button>
+      <button onclick="switchTab('programme')" id="tab-btn-programme" class="tab-btn py-3 px-4 text-xs font-medium text-navy-500 hover:text-navy-900 border-b-2 border-transparent flex items-center space-x-2 whitespace-nowrap transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span>8. Programme Handover</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- 3. MAIN BOARD-READY WORKSPACE              -->
+  <!-- ========================================== -->
+  <main class="flex-1 max-w-[1700px] w-full mx-auto p-4 lg:p-8 space-y-8">
+
+    <div class="bg-white border border-navy-200 border-l-4 border-l-brand-amber rounded-xl px-4 py-3 text-xs text-navy-700 card-shadow">
+      Financial figures in this option are <strong class="text-navy-900">sample data</strong> for design review. They are not AIB's reported results.
+    </div>
+
+    <!-- PAGE 1: EXECUTIVE OVERVIEW -->
+    <section id="page-overview" class="page-content space-y-8">
+
+      <!-- Executive Summary Box (McKinsey / Board Readout Style) -->
+      <div class="bg-white border border-navy-200 rounded-xl p-6 card-shadow-lg relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-navy-900 via-brand-blue to-navy-900"></div>
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div class="space-y-2 max-w-4xl">
+            <div class="flex items-center space-x-3">
+              <span class="bg-navy-100 text-navy-800 text-[11px] font-semibold px-2.5 py-0.5 rounded border border-navy-300 uppercase tracking-wider">Board Intelligence Briefing</span>
+              <span class="text-xs text-navy-500">Prepared by Aspiro Management Consultants</span>
+            </div>
+            <h2 class="text-xl lg:text-2xl font-serif font-bold text-navy-900 tracking-tight">
+              Executive Narrative: Q3 2026 Financial Trajectory & Operating Model Handover
+            </h2>
+            <p class="text-sm text-navy-600 leading-relaxed font-sans">
+              Afghanistan International Bank demonstrates strong capital resilience through September 2026, with YTD net profit of <strong class="text-navy-900 font-semibold">$14.21M</strong> outperforming budget by <strong class="text-brand-green font-semibold">+4.8%</strong>. Interest margin expansion offsets tech cost overruns (+10.0%), while regulatory ratios remain comfortably above DAB thresholds.
+            </p>
+          </div>
+
+          <div class="bg-navy-50 border border-navy-200 rounded-lg p-4 shrink-0 min-w-[280px] space-y-2">
+            <div class="text-xs font-semibold text-navy-700 uppercase tracking-wider flex items-center justify-between">
+              <span>Commencement Status</span>
+              <span class="text-brand-amber font-bold">10 NOV START</span>
+            </div>
+            <div class="text-2xl font-bold text-navy-900 font-sans">2 of 5 <span class="text-xs font-normal text-navy-500">Gates Closed</span></div>
+            <div class="w-full bg-navy-200 h-2 rounded-full overflow-hidden">
+              <div class="bg-brand-blue h-full w-[40%]"></div>
+            </div>
+            <p class="text-[11px] text-navy-500 italic">3 decision gates pending written CEO/Board confirmation.</p>
+          </div>
+        </div>
+
+        <!-- Key Strategic Callouts -->
+        <div class="mt-6 pt-5 border-t border-navy-100 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-sans">
+          <div class="flex items-start space-x-3 bg-white p-3 rounded-lg border border-navy-100">
+            <div class="p-1.5 bg-brand-greenLight text-brand-green rounded shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            </div>
+            <div>
+              <strong class="text-navy-900 block font-semibold mb-0.5">Net Interest Margin Expansion</strong>
+              <span class="text-navy-600">NII reached $27.05M (+4.8% vs budget), driven by high central bank deposit yields.</span>
+            </div>
+          </div>
+
+          <div class="flex items-start space-x-3 bg-white p-3 rounded-lg border border-navy-100">
+            <div class="p-1.5 bg-brand-amberLight text-brand-amber rounded shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div>
+              <strong class="text-navy-900 block font-semibold mb-0.5">IT Cost & Impairment Variance</strong>
+              <span class="text-navy-600">Technology operating expenses run -$540K over budget due to core banking license renewals.</span>
+            </div>
+          </div>
+
+          <div class="flex items-start space-x-3 bg-white p-3 rounded-lg border border-navy-100">
+            <div class="p-1.5 bg-brand-blueLight text-brand-blue rounded shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <div>
+              <strong class="text-navy-900 block font-semibold mb-0.5">Pristine Capital Adequacy</strong>
+              <span class="text-navy-600">CAR stands at 18.4% against DAB regulatory minimum of 12.0%, providing $50M+ headroom.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Executive Grid Row -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+        <!-- KPI 1: YTD Net Profit -->
+        <div class="bg-white border border-navy-200 rounded-xl p-5 card-shadow space-y-3">
+          <div class="flex items-center justify-between text-xs font-medium text-navy-500 uppercase tracking-wider">
+            <span>YTD Net Profit</span>
+            <span class="bg-brand-greenLight text-brand-green font-bold px-2 py-0.5 rounded text-[11px]">+4.8% vs BGT</span>
+          </div>
+          <div class="flex items-baseline space-x-2">
+            <span class="text-3xl font-sans font-bold text-navy-900 tabular-nums">$14,210K</span>
+            <span class="text-xs text-navy-500">Budget: $13,560K</span>
+          </div>
+          <div class="pt-2 border-t border-navy-100 flex items-center justify-between text-xs text-navy-600">
+            <span>vs Prior Year (2025)</span>
+            <strong class="text-brand-green font-semibold tabular-nums">+$1,010K (+7.7%)</strong>
+          </div>
+        </div>
+
+        <!-- KPI 2: Capital Adequacy Ratio -->
+        <div class="bg-white border border-navy-200 rounded-xl p-5 card-shadow space-y-3">
+          <div class="flex items-center justify-between text-xs font-medium text-navy-500 uppercase tracking-wider">
+            <span>Capital Adequacy (CAR)</span>
+            <span class="bg-brand-blueLight text-brand-blue font-bold px-2 py-0.5 rounded text-[11px]">DAB Req: 12.0%</span>
+          </div>
+          <div class="flex items-baseline space-x-2">
+            <span class="text-3xl font-sans font-bold text-navy-900 tabular-nums">18.4%</span>
+            <span class="text-xs text-brand-green font-semibold">+640 bps Headroom</span>
+          </div>
+          <div class="pt-2 border-t border-navy-100 flex items-center justify-between text-xs text-navy-600">
+            <span>Total Regulatory Capital</span>
+            <strong class="text-navy-900 font-semibold tabular-nums">$114.8M</strong>
+          </div>
+        </div>
+
+        <!-- KPI 3: Cost-to-Income Ratio -->
+        <div class="bg-white border border-navy-200 rounded-xl p-5 card-shadow space-y-3">
+          <div class="flex items-center justify-between text-xs font-medium text-navy-500 uppercase tracking-wider">
+            <span>Cost-to-Income Ratio</span>
+            <span class="bg-brand-greenLight text-brand-green font-bold px-2 py-0.5 rounded text-[11px]">On Target</span>
+          </div>
+          <div class="flex items-baseline space-x-2">
+            <span class="text-3xl font-sans font-bold text-navy-900 tabular-nums">58.4%</span>
+            <span class="text-xs text-navy-500">Target: &lt;60.0%</span>
+          </div>
+          <div class="pt-2 border-t border-navy-100 flex items-center justify-between text-xs text-navy-600">
+            <span>Total Opex (YTD)</span>
+            <strong class="text-navy-900 font-semibold tabular-nums">$28.22M</strong>
+          </div>
+        </div>
+
+        <!-- KPI 4: Liquidity Coverage (LCR) -->
+        <div class="bg-white border border-navy-200 rounded-xl p-5 card-shadow space-y-3">
+          <div class="flex items-center justify-between text-xs font-medium text-navy-500 uppercase tracking-wider">
+            <span>Liquidity Coverage (LCR)</span>
+            <span class="bg-brand-greenLight text-brand-green font-bold px-2 py-0.5 rounded text-[11px]">Compliant</span>
+          </div>
+          <div class="flex items-baseline space-x-2">
+            <span class="text-3xl font-sans font-bold text-navy-900 tabular-nums">142.1%</span>
+            <span class="text-xs text-navy-500">Limit: 100.0%</span>
+          </div>
+          <div class="pt-2 border-t border-navy-100 flex items-center justify-between text-xs text-navy-600">
+            <span>Liquid Asset Buffer</span>
+            <strong class="text-navy-900 font-semibold tabular-nums">$184.2M</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Performance Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Chart 1: Monthly Net Profit Trend -->
+        <div class="lg:col-span-8 bg-white border border-navy-200 rounded-xl p-6 card-shadow space-y-4">
+          <div class="flex items-center justify-between border-b border-navy-100 pb-3">
+            <div>
+              <h3 class="text-sm font-semibold text-navy-900 uppercase tracking-wider">Net Profit Trajectory (Actual vs Budget - USD '000)</h3>
+              <p class="text-xs text-navy-500">Nine-month comparative performance through September 2026</p>
+            </div>
+            <div class="flex items-center space-x-4 text-xs font-medium">
+              <span class="flex items-center"><span class="w-3 h-3 bg-brand-blue rounded-sm mr-1.5"></span> 2026 Actual</span>
+              <span class="flex items-center"><span class="w-3 h-3 bg-navy-300 rounded-sm mr-1.5"></span> 2026 Budget</span>
+            </div>
+          </div>
+
+          <!-- Canvas Performance Chart -->
+          <div class="h-64 relative w-full pt-2">
+            <canvas id="profitChartCanvasExecutive" class="w-full h-full"></canvas>
+          </div>
+
+          <div class="bg-navy-50 p-3 rounded-lg border border-navy-100 text-xs text-navy-700 flex items-center justify-between font-sans">
+            <span><strong>Analytical Insight:</strong> Profit peaked in September ($1.88M) due to quarterly interest adjustments on foreign reserve placements.</span>
+            <button onclick="switchTab('pnl')" class="text-brand-blue font-semibold hover:underline shrink-0 ml-2">Full P&L Breakdown &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Board Decision Gates Card -->
+        <div class="lg:col-span-4 bg-white border border-navy-200 rounded-xl p-6 card-shadow space-y-4 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between border-b border-navy-100 pb-3 mb-3">
+              <h3 class="text-sm font-semibold text-navy-900 uppercase tracking-wider">Commencement Gates</h3>
+              <span class="text-xs text-brand-amber font-semibold">10 Nov Target</span>
+            </div>
+            <p class="text-xs text-navy-500 mb-4">Five decision dependencies in the operating plan. Written CEO/Board confirmation required.</p>
+
+            <div class="space-y-2.5 text-xs font-sans">
+              <div class="p-2.5 bg-navy-50 rounded-lg border border-navy-200 flex items-center justify-between">
+                <div>
+                  <div class="font-semibold text-navy-900">1. Interim CFO Written Delegation</div>
+                  <div class="text-navy-500 text-[11px]">Owner: CEO | Due: 01 Nov</div>
+                </div>
+                <span class="bg-brand-greenLight text-brand-green border border-brand-green/30 px-2 py-0.5 rounded font-bold text-[10px]">CLOSED</span>
+              </div>
+
+              <div class="p-2.5 bg-navy-50 rounded-lg border border-navy-200 flex items-center justify-between">
+                <div>
+                  <div class="font-semibold text-navy-900">2. Finance Structure & Operating Model</div>
+                  <div class="text-navy-500 text-[11px]">Owner: William B. | Due: 03 Nov</div>
+                </div>
+                <span class="bg-brand-greenLight text-brand-green border border-brand-green/30 px-2 py-0.5 rounded font-bold text-[10px]">CLOSED</span>
+              </div>
+
+              <div class="p-2.5 bg-navy-50 rounded-lg border border-navy-200 flex items-center justify-between">
+                <div>
+                  <div class="font-semibold text-navy-900">3. System Maker-Checker Rights</div>
+                  <div class="text-navy-500 text-[11px]">Owner: AIB IT / Ashish | Due: 05 Nov</div>
+                </div>
+                <span class="bg-brand-amberLight text-brand-amber border border-brand-amber/30 px-2 py-0.5 rounded font-bold text-[10px]">PENDING</span>
+              </div>
+
+              <div class="p-2.5 bg-navy-50 rounded-lg border border-navy-200 flex items-center justify-between">
+                <div>
+                  <div class="font-semibold text-navy-900">4. DAB Regulatory Notification</div>
+                  <div class="text-navy-500 text-[11px]">Owner: Legal | Due: 07 Nov</div>
+                </div>
+                <span class="bg-brand-amberLight text-brand-amber border border-brand-amber/30 px-2 py-0.5 rounded font-bold text-[10px]">PENDING</span>
+              </div>
+
+              <div class="p-2.5 bg-navy-50 rounded-lg border border-navy-200 flex items-center justify-between">
+                <div>
+                  <div class="font-semibold text-navy-900">5. 2027 Budget Guidelines Approval</div>
+                  <div class="text-navy-500 text-[11px]">Owner: Board | Due: 09 Nov</div>
+                </div>
+                <span class="bg-brand-roseLight text-brand-rose border border-brand-rose/30 px-2 py-0.5 rounded font-bold text-[10px]">OPEN</span>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="switchTab('programme')" class="w-full text-center py-2 bg-navy-50 hover:bg-navy-100 border border-navy-200 rounded-lg text-xs font-semibold text-navy-800 transition-colors mt-4">
+            View Complete Handover Roadmap &rarr;
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Narrative Insights & Governance Commentary Section -->
+      <div class="bg-white border border-navy-200 rounded-xl p-6 card-shadow space-y-4">
+        <div class="flex items-center space-x-3 border-b border-navy-100 pb-3">
+          <div class="p-2 bg-brand-blueLight text-brand-blue rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <div>
+            <h3 class="text-base font-serif font-bold text-navy-900">Executive Governance & Variance Commentary</h3>
+            <p class="text-xs text-navy-500">Board-level analysis generated for the Board Audit & Risk Committee</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 font-sans text-xs text-navy-700">
+          <div class="space-y-2">
+            <h4 class="font-semibold text-navy-900 uppercase tracking-wider text-[11px] flex items-center space-x-1.5">
+              <span class="w-2 h-2 rounded-full bg-brand-blue"></span>
+              <span>1. Revenue & Yield Dynamics</span>
+            </h4>
+            <p class="leading-relaxed">
+              Net interest income remains the principal growth engine ($27.05M YTD), expanding +4.8% over budget. Higher placement rates on central bank deposits compensated for a minor softening in fee income (-6.0%), which stemmed from trade finance delays in foreign currency transactions.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <h4 class="font-semibold text-navy-900 uppercase tracking-wider text-[11px] flex items-center space-x-1.5">
+              <span class="w-2 h-2 rounded-full bg-brand-amber"></span>
+              <span>2. Cost Control & Technology Overruns</span>
+            </h4>
+            <p class="leading-relaxed">
+              Total operating expenses reached $28.22M, staying within aggregate budget limits due to personnel savings (+$390K). However, IT expenses ran -$540K over budget due to unplanned core banking maintenance and SWIFT gateway security upgrades required for DAB compliance.
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <h4 class="font-semibold text-navy-900 uppercase tracking-wider text-[11px] flex items-center space-x-1.5">
+              <span class="w-2 h-2 rounded-full bg-brand-green"></span>
+              <span>3. Balance Sheet & Asset Quality</span>
+            </h4>
+            <p class="leading-relaxed">
+              Total assets expanded +5.4% YTD to $782.4M. Customer deposits grew +5.5% to $612.1M, maintaining a strong 78.2% deposit-to-asset ratio. Non-performing loan (NPL) coverage ratio stands at 148%, well above the regulatory requirement of 100%.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- PAGE 2: P&L DEEP-DIVE -->
+    <section id="page-pnl" class="page-content space-y-6 hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-navy-200 pb-3 gap-4">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-navy-900">Statement of Profit or Loss</h2>
+          <p class="text-xs text-navy-500">January to September 2026 performance breakdown (USD Thousands). Favourable variances indicated in green.</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <input type="text" onkeyup="filterTable('pnlExecutiveTable', this.value)" placeholder="Search P&L lines..." class="bg-white border border-navy-300 text-xs text-navy-900 px-3 py-1.5 rounded-lg font-sans outline-none focus:border-brand-blue w-64 shadow-sm">
+        </div>
+      </div>
+
+      <div class="bg-white border border-navy-200 rounded-xl overflow-hidden card-shadow">
+        <div class="overflow-x-auto">
+          <table id="pnlExecutiveTable" class="w-full text-left font-sans text-xs">
+            <thead>
+              <tr class="bg-navy-900 text-white uppercase text-[11px] font-semibold tracking-wider">
+                <th class="p-3.5">FINANCIAL LINE ITEM</th>
+                <th class="p-3.5 text-right">SEP 2026 ACTUAL</th>
+                <th class="p-3.5 text-right">YTD ACTUAL</th>
+                <th class="p-3.5 text-right">YTD BUDGET</th>
+                <th class="p-3.5 text-right">VARIANCE ($)</th>
+                <th class="p-3.5 text-right">VAR %</th>
+                <th class="p-3.5 text-right">YTD 2025 (PRIOR)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-navy-100 tabular-nums text-[13px]">
+              <tr class="hover:bg-navy-50">
+                <td class="p-3.5 font-semibold text-navy-900">Interest Income</td>
+                <td class="p-3.5 text-right">4,210</td>
+                <td class="p-3.5 text-right font-bold text-navy-900">36,890</td>
+                <td class="p-3.5 text-right text-navy-600">35,400</td>
+                <td class="p-3.5 text-right text-brand-green font-semibold">+1,490</td>
+                <td class="p-3.5 text-right text-brand-green font-semibold">+4.2%</td>
+                <td class="p-3.5 text-right text-navy-500">34,100</td>
+              </tr>
+              <tr class="hover:bg-navy-50">
+                <td class="p-3.5 font-semibold text-navy-900">Interest Expense</td>
+                <td class="p-3.5 text-right">(1,120)</td>
+                <td class="p-3.5 text-right text-navy-900">(9,840)</td>
+                <td class="p-3.5 text-right text-navy-600">(9,600)</td>
+                <td class="p-3.5 text-right text-brand-rose font-semibold">-240</td>
+                <td class="p-3.5 text-right text-brand-rose font-semibold">-2.5%</td>
+                <td class="p-3.5 text-right text-navy-500">(9,200)</td>
+              </tr>
+              <tr class="bg-navy-50/80 font-bold text-navy-900">
+                <td class="p-3.5">NET INTEREST INCOME</td>
+                <td class="p-3.5 text-right">3,090</td>
+                <td class="p-3.5 text-right text-brand-blue">27,050</td>
+                <td class="p-3.5 text-right">25,800</td>
+                <td class="p-3.5 text-right text-brand-green">+1,250</td>
+                <td class="p-3.5 text-right text-brand-green">+4.8%</td>
+                <td class="p-3.5 text-right text-navy-700">24,900</td>
+              </tr>
+              <tr class="hover:bg-navy-50">
+                <td class="p-3.5 text-navy-800">Fees & Commission Income</td>
+                <td class="p-3.5 text-right">1,450</td>
+                <td class="p-3.5 text-right">12,410</td>
+                <td class="p-3.5 text-right text-navy-600">13,200</td>
+                <td class="p-3.5 text-right text-brand-rose font-semibold">-790</td>
+                <td class="p-3.5 text-right text-brand-rose font-semibold">-6.0%</td>
+                <td class="p-3.5 text-right text-navy-500">12,100</td>
+              </tr>
+              <tr class="hover:bg-navy-50">
+                <td class="p-3.5 text-navy-800">Other Operating Income</td>
+                <td class="p-3.5 text-right">980</td>
+                <td class="p-3.5 text-right">8,860</td>
+                <td class="p-3.5 text-right text-navy-600">8,500</td>
+                <td class="p-3.5 text-right text-brand-green font-semibold">+360</td>
+                <td class="p-3.5 text-right text-brand-green font-semibold">+4.2%</td>
+                <td class="p-3.5 text-right text-navy-500">8,200</td>
+              </tr>
+              <tr class="bg-navy-100/60 font-bold text-navy-900">
+                <td class="p-3.5">TOTAL OPERATING INCOME</td>
+                <td class="p-3.5 text-right">5,520</td>
+                <td class="p-3.5 text-right text-brand-blue">48,320</td>
+                <td class="p-3.5 text-right">47,500</td>
+                <td class="p-3.5 text-right text-brand-green">+820</td>
+                <td class="p-3.5 text-right text-brand-green">+1.7%</td>
+                <td class="p-3.5 text-right text-navy-700">45,200</td>
+              </tr>
+              <tr class="hover:bg-navy-50">
+                <td class="p-3.5 text-navy-800">Personnel Expenses</td>
+                <td class="p-3.5 text-right">(1,820)</td>
+                <td class="p-3.5 text-right">(16,110)</td>
+                <td class="p-3.5 text-right text-navy-600">(16,500)</td>
+                <td class="p-3.5 text-right text-brand-green font-semibold">+390</td>
+                <td class="p-3.5 text-right text-brand-green font-semibold">+2.4%</td>
+                <td class="p-3.5 text-right text-navy-500">(15,800)</td>
+              </tr>
+              <tr class="hover:bg-navy-50">
+                <td class="p-3.5 text-navy-800">IT & Technology Operating Costs</td>
+                <td class="p-3.5 text-right">(680)</td>
+                <td class="p-3.5 text-right text-brand-rose font-bold">(5,940)</td>
+                <td class="p-3.5 text-right text-navy-600">(5,400)</td>
+                <td class="p-3.5 text-right text-brand-rose font-semibold">-540</td>
+                <td class="p-3.5 text-right text-brand-rose font-semibold">-10.0%</td>
+                <td class="p-3.5 text-right text-navy-500">(5,100)</td>
+              </tr>
+              <tr class="hover:bg-navy-50">
+                <td class="p-3.5 text-navy-800">General Administrative Expenses</td>
+                <td class="p-3.5 text-right">(710)</td>
+                <td class="p-3.5 text-right">(6,170)</td>
+                <td class="p-3.5 text-right text-navy-600">(6,300)</td>
+                <td class="p-3.5 text-right text-brand-green font-semibold">+130</td>
+                <td class="p-3.5 text-right text-brand-green font-semibold">+2.1%</td>
+                <td class="p-3.5 text-right text-navy-500">(6,000)</td>
+              </tr>
+              <tr class="bg-brand-blueLight/50 font-bold text-navy-900 border-t-2 border-brand-blue">
+                <td class="p-3.5">NET PROFIT BEFORE TAX</td>
+                <td class="p-3.5 text-right">1,620</td>
+                <td class="p-3.5 text-right text-brand-blue text-base">14,210</td>
+                <td class="p-3.5 text-right">13,560</td>
+                <td class="p-3.5 text-right text-brand-green">+650</td>
+                <td class="p-3.5 text-right text-brand-green">+4.8%</td>
+                <td class="p-3.5 text-right text-navy-700">13,200</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: BALANCE SHEET -->
+    <section id="page-balance" class="page-content space-y-6 hidden">
+      <div class="flex items-center justify-between border-b border-navy-200 pb-3">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-navy-900">Statement of Financial Position & Capital Structure</h2>
+          <p class="text-xs text-navy-500">Balance sheet view as of 30 September 2026 (USD Thousands)</p>
+        </div>
+        <span class="bg-brand-greenLight text-brand-green border border-brand-green/30 text-xs font-semibold px-3 py-1 rounded-full">
+          DAB Capital Adequacy: Compliant (18.4%)
+        </span>
+      </div>
+
+      <div class="bg-white border border-navy-200 rounded-xl overflow-hidden card-shadow">
+        <table class="w-full text-left font-sans text-xs">
+          <thead>
+            <tr class="bg-navy-900 text-white uppercase text-[11px] font-semibold tracking-wider">
+              <th class="p-3.5">BALANCE SHEET LINE ITEM</th>
+              <th class="p-3.5 text-right">30 SEP 2026</th>
+              <th class="p-3.5 text-right">31 AUG 2026</th>
+              <th class="p-3.5 text-right">31 DEC 2025</th>
+              <th class="p-3.5 text-right">MoM CHANGE</th>
+              <th class="p-3.5 text-right">YTD CHANGE</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-navy-100 tabular-nums text-[13px]">
+            <tr class="hover:bg-navy-50">
+              <td class="p-3.5 text-navy-800">Cash & Central Bank Reserves</td>
+              <td class="p-3.5 text-right font-bold text-navy-900">184,200</td>
+              <td class="p-3.5 text-right text-navy-600">179,100</td>
+              <td class="p-3.5 text-right text-navy-600">165,000</td>
+              <td class="p-3.5 text-right text-brand-green font-semibold">+2.8%</td>
+              <td class="p-3.5 text-right text-brand-green font-semibold">+11.6%</td>
+            </tr>
+            <tr class="hover:bg-navy-50">
+              <td class="p-3.5 text-navy-800">Loans & Advances to Customers (Net)</td>
+              <td class="p-3.5 text-right font-bold text-navy-900">412,500</td>
+              <td class="p-3.5 text-right text-navy-600">410,200</td>
+              <td class="p-3.5 text-right text-navy-600">398,000</td>
+              <td class="p-3.5 text-right text-brand-green font-semibold">+0.6%</td>
+              <td class="p-3.5 text-right text-brand-green font-semibold">+3.6%</td>
+            </tr>
+            <tr class="bg-navy-50 font-bold text-navy-900">
+              <td class="p-3.5">TOTAL ASSETS</td>
+              <td class="p-3.5 text-right text-brand-blue text-sm">782,400</td>
+              <td class="p-3.5 text-right">774,100</td>
+              <td class="p-3.5 text-right">742,000</td>
+              <td class="p-3.5 text-right text-brand-green">+1.1%</td>
+              <td class="p-3.5 text-right text-brand-green">+5.4%</td>
+            </tr>
+            <tr class="hover:bg-navy-50">
+              <td class="p-3.5 text-navy-800">Customer Deposits</td>
+              <td class="p-3.5 text-right font-bold text-navy-900">612,100</td>
+              <td class="p-3.5 text-right text-navy-600">605,800</td>
+              <td class="p-3.5 text-right text-navy-600">580,000</td>
+              <td class="p-3.5 text-right text-brand-green font-semibold">+1.0%</td>
+              <td class="p-3.5 text-right text-brand-green font-semibold">+5.5%</td>
+            </tr>
+            <tr class="bg-navy-50 font-bold text-navy-900">
+              <td class="p-3.5">TOTAL EQUITY</td>
+              <td class="p-3.5 text-right text-brand-blue text-sm">114,800</td>
+              <td class="p-3.5 text-right">113,180</td>
+              <td class="p-3.5 text-right">100,590</td>
+              <td class="p-3.5 text-right text-brand-green">+1.4%</td>
+              <td class="p-3.5 text-right text-brand-green">+14.1%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE 4: 2027 BUDGET -->
+    <section id="page-budget" class="page-content space-y-6 hidden">
+      <div class="flex items-center justify-between border-b border-navy-200 pb-3">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-navy-900">2027 Operating Budget Draft</h2>
+          <p class="text-xs text-navy-500">Functional allocations & cost reduction targets (USD Thousands)</p>
+        </div>
+        <span class="bg-brand-amberLight text-brand-amber border border-brand-amber/30 text-xs font-semibold px-3 py-1 rounded-full">
+          Draft v1.2 Board Review
+        </span>
+      </div>
+
+      <div class="bg-white border border-navy-200 rounded-xl overflow-hidden card-shadow">
+        <table class="w-full text-left font-sans text-xs">
+          <thead>
+            <tr class="bg-navy-900 text-white uppercase text-[11px] font-semibold tracking-wider">
+              <th class="p-3.5">FUNCTION / DEPARTMENT</th>
+              <th class="p-3.5">BUDGET OWNER</th>
+              <th class="p-3.5 text-right">2026 FORECAST</th>
+              <th class="p-3.5 text-right">2027 DRAFT</th>
+              <th class="p-3.5 text-right">CHANGE (%)</th>
+              <th class="p-3.5 text-center">APPROVAL STATUS</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-navy-100 tabular-nums text-[13px]">
+            <tr class="hover:bg-navy-50">
+              <td class="p-3.5 font-semibold text-navy-900">Retail Banking Operations</td>
+              <td class="p-3.5 text-navy-600">H. Rahimi</td>
+              <td class="p-3.5 text-right">12,400</td>
+              <td class="p-3.5 text-right font-bold text-navy-900">11,900</td>
+              <td class="p-3.5 text-right text-brand-green font-semibold">-4.0%</td>
+              <td class="p-3.5 text-center"><span class="bg-brand-greenLight text-brand-green border border-brand-green/30 px-2.5 py-0.5 rounded text-[11px] font-semibold">APPROVED</span></td>
+            </tr>
+            <tr class="hover:bg-navy-50">
+              <td class="p-3.5 font-semibold text-navy-900">IT & Infrastructure</td>
+              <td class="p-3.5 text-navy-600">K. Jaising</td>
+              <td class="p-3.5 text-right">7,900</td>
+              <td class="p-3.5 text-right font-bold text-navy-900">8,600</td>
+              <td class="p-3.5 text-right text-brand-rose font-semibold">+8.8%</td>
+              <td class="p-3.5 text-center"><span class="bg-brand-amberLight text-brand-amber border border-brand-amber/30 px-2.5 py-0.5 rounded text-[11px] font-semibold">IN REVIEW</span></td>
+            </tr>
+            <tr class="hover:bg-navy-50">
+              <td class="p-3.5 font-semibold text-navy-900">Risk & Compliance</td>
+              <td class="p-3.5 text-navy-600">M. Amin</td>
+              <td class="p-3.5 text-right">3,200</td>
+              <td class="p-3.5 text-right font-bold text-navy-900">3,400</td>
+              <td class="p-3.5 text-right text-brand-rose font-semibold">+6.2%</td>
+              <td class="p-3.5 text-center"><span class="bg-brand-greenLight text-brand-green border border-brand-green/30 px-2.5 py-0.5 rounded text-[11px] font-semibold">APPROVED</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE 5: CLOSE & CONTROLS -->
+    <section id="page-close" class="page-content space-y-6 hidden">
+      <div class="flex items-center justify-between border-b border-navy-200 pb-3">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-navy-900">Month-End Close & Reconciliation Controls</h2>
+          <p class="text-xs text-navy-500">Balance sheet integrity & aged reconciling items monitoring</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white border border-navy-200 rounded-xl p-5 card-shadow space-y-4">
+          <h3 class="text-sm font-semibold text-navy-900 uppercase tracking-wider border-b border-navy-100 pb-2">Aged Reconciling Items Summary</h3>
+          <table class="w-full text-left font-sans text-xs">
+            <thead>
+              <tr class="text-navy-500 border-b border-navy-100 text-[11px] font-semibold uppercase">
+                <th class="pb-2">ACCOUNT CLASS</th>
+                <th class="pb-2 text-right">TOTAL ITEMS</th>
+                <th class="pb-2 text-right">&gt;30 DAYS</th>
+                <th class="pb-2 text-right">&gt;180 DAYS</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-navy-100 tabular-nums text-[12px]">
+              <tr>
+                <td class="py-2.5 text-navy-900 font-medium">Nostro Bank Accounts</td>
+                <td class="text-right text-navy-900 font-bold">142</td>
+                <td class="text-right text-brand-amber font-bold">12</td>
+                <td class="text-right text-brand-rose font-bold">2</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 text-navy-900 font-medium">Intercompany Clearing</td>
+                <td class="text-right text-navy-900 font-bold">88</td>
+                <td class="text-right text-brand-amber font-bold">4</td>
+                <td class="text-right text-brand-green font-bold">0</td>
+              </tr>
+              <tr>
+                <td class="py-2.5 text-navy-900 font-medium">Suspense Accounts</td>
+                <td class="text-right text-navy-900 font-bold">34</td>
+                <td class="text-right text-brand-rose font-bold">9</td>
+                <td class="text-right text-brand-rose font-bold">3</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="bg-white border border-navy-200 rounded-xl p-5 card-shadow space-y-4">
+          <h3 class="text-sm font-semibold text-navy-900 uppercase tracking-wider border-b border-navy-100 pb-2">November Close Milestone Calendar</h3>
+          <ul class="font-sans text-xs space-y-3">
+            <li class="flex justify-between items-center p-2 bg-navy-50 rounded border border-navy-100">
+              <span class="text-navy-900 font-medium">WD1: Sub-ledger feeds locked</span>
+              <span class="bg-brand-greenLight text-brand-green px-2 py-0.5 rounded font-bold text-[10px]">COMPLETED</span>
+            </li>
+            <li class="flex justify-between items-center p-2 bg-navy-50 rounded border border-navy-100">
+              <span class="text-navy-900 font-medium">WD3: Intercompany elimination completed</span>
+              <span class="bg-brand-greenLight text-brand-green px-2 py-0.5 rounded font-bold text-[10px]">COMPLETED</span>
+            </li>
+            <li class="flex justify-between items-center p-2 bg-navy-50 rounded border border-navy-100">
+              <span class="text-navy-900 font-medium">WD6: Flash P&L review with CEO</span>
+              <span class="bg-brand-amberLight text-brand-amber px-2 py-0.5 rounded font-bold text-[10px]">PENDING</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 6: REGULATORY & AUDIT -->
+    <section id="page-reg" class="page-content space-y-6 hidden">
+      <div class="flex items-center justify-between border-b border-navy-200 pb-3">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-navy-900">DAB Regulatory Submissions & Audit Governance</h2>
+          <p class="text-xs text-navy-500">Da Afghanistan Bank compliance returns & open inspection items</p>
+        </div>
+      </div>
+
+      <div class="bg-white border border-navy-200 rounded-xl overflow-hidden card-shadow">
+        <table class="w-full text-left font-sans text-xs">
+          <thead>
+            <tr class="bg-navy-900 text-white uppercase text-[11px] font-semibold tracking-wider">
+              <th class="p-3.5">REGULATORY RETURN</th>
+              <th class="p-3.5">FREQUENCY</th>
+              <th class="p-3.5 text-right">DUE DATE</th>
+              <th class="p-3.5">SIGNATORY</th>
+              <th class="p-3.5 text-center">STATUS</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-navy-100 tabular-nums text-[13px]">
+            <tr>
+              <td class="p-3.5 font-semibold text-navy-900">Prudential Capital & Liquidity Return</td>
+              <td class="p-3.5 text-navy-600">Monthly</td>
+              <td class="p-3.5 text-right font-bold text-navy-900">15 Nov 2026</td>
+              <td class="p-3.5 text-navy-800">CFO / CEO</td>
+              <td class="p-3.5 text-center"><span class="bg-brand-blueLight text-brand-blue border border-brand-blue/30 px-2.5 py-0.5 rounded text-[11px] font-semibold">IN PREPARATION</span></td>
+            </tr>
+            <tr>
+              <td class="p-3.5 font-semibold text-navy-900">FX Open Position Exposure Report</td>
+              <td class="p-3.5 text-navy-600">Weekly</td>
+              <td class="p-3.5 text-right font-bold text-navy-900">07 Nov 2026</td>
+              <td class="p-3.5 text-navy-800">Head of Treasury</td>
+              <td class="p-3.5 text-center"><span class="bg-brand-greenLight text-brand-green border border-brand-green/30 px-2.5 py-0.5 rounded text-[11px] font-semibold">READY FOR SIGNATURE</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE 7: SAVINGS PIPELINE -->
+    <section id="page-savings" class="page-content space-y-6 hidden">
+      <div class="flex items-center justify-between border-b border-navy-200 pb-3">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-navy-900">Discovery Savings Pipeline</h2>
+          <p class="text-xs text-navy-500">Run-rate cost reductions identified across bank operations (USD Thousands)</p>
+        </div>
+        <span class="bg-brand-greenLight text-brand-green border border-brand-green/30 text-xs font-semibold px-3 py-1 rounded-full">
+          Pipeline Target: $2,500K
+        </span>
+      </div>
+
+      <div class="bg-white border border-navy-200 rounded-xl overflow-hidden card-shadow">
+        <table class="w-full text-left font-sans text-xs">
+          <thead>
+            <tr class="bg-navy-900 text-white uppercase text-[11px] font-semibold tracking-wider">
+              <th class="p-3.5">SAVING INITIATIVE LEVER</th>
+              <th class="p-3.5">FUNCTION</th>
+              <th class="p-3.5 text-right">ANNUAL SAVING ($)</th>
+              <th class="p-3.5 text-right">ONE-OFF COST ($)</th>
+              <th class="p-3.5 text-center">STAGE</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-navy-100 tabular-nums text-[13px]">
+            <tr>
+              <td class="p-3.5 font-semibold text-navy-900">Vendor Contract Consolidation (IT)</td>
+              <td class="p-3.5 text-navy-600">Technology</td>
+              <td class="p-3.5 text-right text-brand-green font-bold">450,000</td>
+              <td class="p-3.5 text-right text-navy-600">25,000</td>
+              <td class="p-3.5 text-center"><span class="bg-brand-greenLight text-brand-green border border-brand-green/30 px-2.5 py-0.5 rounded text-[11px] font-semibold">VALIDATED</span></td>
+            </tr>
+            <tr>
+              <td class="p-3.5 font-semibold text-navy-900">Branch Optimization & Facility Rationalization</td>
+              <td class="p-3.5 text-navy-600">Operations</td>
+              <td class="p-3.5 text-right text-brand-green font-bold">780,000</td>
+              <td class="p-3.5 text-right text-navy-600">120,000</td>
+              <td class="p-3.5 text-center"><span class="bg-brand-amberLight text-brand-amber border border-brand-amber/30 px-2.5 py-0.5 rounded text-[11px] font-semibold">DISCOVERY</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAGE 8: PROGRAMME HANDOVER -->
+    <section id="page-programme" class="page-content space-y-6 hidden">
+      <div class="flex items-center justify-between border-b border-navy-200 pb-3">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-navy-900">Interim Programme & Handover Readiness</h2>
+          <p class="text-xs text-navy-500">Handover pack completion status for incoming permanent CFO</p>
+        </div>
+        <span class="bg-brand-blueLight text-brand-blue border border-brand-blue/30 text-xs font-semibold px-3 py-1 rounded-full">
+          Readiness Score: 68%
+        </span>
+      </div>
+
+      <div class="bg-white border border-navy-200 rounded-xl p-6 card-shadow space-y-4">
+        <h3 class="text-sm font-semibold text-navy-900 uppercase tracking-wider border-b border-navy-100 pb-2">Handover Pack Deliverable Matrix</h3>
+        <div class="space-y-4 font-sans text-xs">
+          <div>
+            <div class="flex justify-between text-navy-900 font-semibold mb-1">
+              <span>Standard Operating Procedures & Desktop Notes</span>
+              <span class="text-brand-green">85% Ready</span>
+            </div>
+            <div class="w-full bg-navy-100 h-2 rounded-full overflow-hidden">
+              <div class="bg-brand-green h-full w-[85%]"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-navy-900 font-semibold mb-1">
+              <span>Automated Close Calendar & Controls Framework</span>
+              <span class="text-brand-blue">60% Ready</span>
+            </div>
+            <div class="w-full bg-navy-100 h-2 rounded-full overflow-hidden">
+              <div class="bg-brand-blue h-full w-[60%]"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 4. BOARD-READY FOOTER                     -->
+  <!-- ========================================== -->
+  <footer class="border-t border-navy-200 bg-white py-4 px-6 font-sans text-xs text-navy-500 mt-auto no-print">
+    <div class="max-w-[1700px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
+      <div>
+        <strong>Afghanistan International Bank</strong> &bull; CFO Command Center &bull; Board Intelligence Dashboard
+      </div>
+      <div class="flex items-center space-x-4">
+        <span>Prepared by Aspiro Management Consultants</span>
+        <span>&bull;</span>
+        <span class="text-navy-700 font-semibold">Private & Confidential</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- 5. CHART ENGINE & INTERACTIVE CONTROLS     -->
+  <!-- ========================================== -->
+  <script src="switch.js"></script>
+  <script>
+    // Tab Navigation Switcher
+    function switchTab(tabId) {
+      document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-brand-blue', 'border-brand-blue', 'font-semibold', 'active');
+        btn.classList.add('text-navy-500', 'border-transparent', 'font-medium');
+      });
+
+      const activePage = document.getElementById(`page-${tabId}`);
+      if (activePage) activePage.classList.remove('hidden');
+
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-navy-500', 'border-transparent', 'font-medium');
+        activeBtn.classList.add('text-brand-blue', 'border-brand-blue', 'font-semibold', 'active');
+      }
+
+      // Same #tab-<name> link format as Option 1, so the design switch keeps the open page
+      try { history.replaceState(null, '', '#tab-' + tabId); } catch (e) { /* ignore */ }
+
+      if (tabId === 'overview') {
+        renderProfitChart();
+      }
+    }
+
+    // Filter Function for Data Tables
+    function filterTable(tableId, query) {
+      const table = document.getElementById(tableId);
+      if (!table) return;
+      const rows = table.querySelectorAll('tbody tr');
+      query = query.toLowerCase();
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+      });
+    }
+
+    // Period Change Selector Handler
+    function handlePeriodChange(val) {
+      console.log('Reporting Period Changed:', val);
+    }
+
+    // Executive Net Profit Canvas Chart Renderer
+    function renderProfitChart() {
+      const canvas = document.getElementById('profitChartCanvasExecutive');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
+      const actuals = [1200, 1450, 1380, 1600, 1550, 1720, 1680, 1750, 1880];
+      const budget = [1300, 1400, 1400, 1500, 1500, 1600, 1600, 1650, 1700];
+
+      const padding = 35;
+      const chartWidth = rect.width - padding * 2;
+      const chartHeight = rect.height - padding * 2;
+      const maxVal = 2200;
+
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      // Horizontal Reference Grid Lines
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = padding + (chartHeight / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(rect.width - padding, y);
+        ctx.stroke();
+
+        // Y-axis labels
+        const val = Math.round(maxVal - (maxVal / 4) * i);
+        ctx.fillStyle = '#64748B';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillText(`$${val}K`, 2, y + 3);
+      }
+
+      // Draw Bars (Actuals - Deep Blue)
+      const groupWidth = chartWidth / months.length;
+      const barWidth = groupWidth * 0.45;
+
+      months.forEach((m, idx) => {
+        const x = padding + (idx * groupWidth) + (groupWidth - barWidth) / 2;
+        const barH = (actuals[idx] / maxVal) * chartHeight;
+        const y = padding + chartHeight - barH;
+
+        // Rounded Top Bar
+        ctx.fillStyle = '#2563EB';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(x, y, barWidth, barH, [4, 4, 0, 0]);
+        } else {
+          ctx.rect(x, y, barWidth, barH);
+        }
+        ctx.fill();
+
+        // Month Labels
+        ctx.fillStyle = '#475569';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(m, x + barWidth / 2, rect.height - 10);
+      });
+
+      // Draw Budget Line (Dashed Slate)
+      ctx.beginPath();
+      ctx.strokeStyle = '#94A3B8';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+
+      months.forEach((m, idx) => {
+        const x = padding + (idx * groupWidth) + groupWidth / 2;
+        const y = padding + chartHeight - (budget[idx] / maxVal) * chartHeight;
+        if (idx === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset line dash
+    }
+
+    // Initialize Chart (or the page named in the link, e.g. #tab-pnl)
+    window.onload = function() {
+      const h = location.hash.slice(1);
+      const name = h.indexOf('tab-') === 0 ? h.slice(4) : '';
+      if (name && document.getElementById(`page-${name}`)) switchTab(name);
+      else renderProfitChart();
+    };
+
+    window.onresize = function() {
+      renderProfitChart();
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+/* Source for option-2.css (see tailwind.config.js). Fonts are self-hosted variable files
+   limited to the weights Option 2 uses: Inter 300-700, Newsreader 400-600, Cinzel 600-700. */
+@font-face { font-family: "Inter"; font-weight: 300 700; font-style: normal; font-display: swap; src: url("assets/fonts/inter-latin-wght-normal.woff2") format("woff2"); }
+@font-face { font-family: "Newsreader"; font-weight: 400 600; font-style: normal; font-display: swap; src: url("assets/fonts/newsreader-latin-opsz-normal.woff2") format("woff2"); }
+@font-face { font-family: "Newsreader"; font-weight: 400; font-style: italic; font-display: swap; src: url("assets/fonts/newsreader-latin-opsz-italic.woff2") format("woff2"); }
+@font-face { font-family: "Cinzel"; font-weight: 600 700; font-style: normal; font-display: swap; src: url("assets/fonts/cinzel-latin-wght-normal.woff2") format("woff2"); }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
