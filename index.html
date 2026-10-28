@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIB CFO command center</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1a0830">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<header class="brand">
+  <div class="brand-in">
+    <img class="brand-logo" src="assets/aib-logo-white.png" alt="Afghanistan International Bank" width="154" height="55">
+    <div class="brand-rule" aria-hidden="true"></div>
+    <div class="brand-title">
+      <p class="brand-eyebrow">Finance &middot; Interim operating model</p>
+      <h1 class="brand-h1">CFO command center</h1>
+    </div>
+    <p class="brand-meta"><strong>Prototype for review</strong><br>Prepared by Aspiro Management Consultants<br>Private and confidential</p>
+  </div>
+</header>
+<div id="dash-root">
+<div class="cc">
+  <div class="cc-head" id="top">
+    <p class="cc-takeaway">Year to date to September, net profit is <span class="cc-n" data-draw="t" data-fmt="money" data-source="headline" data-field="ytd_net" data-row="0">—</span>, <span class="cc-n" data-draw="t" data-fmt="dirpct" data-source="headline" data-field="var_pct" data-row="0">—</span> budget. <span class="cc-n" data-draw="t" data-fmt="int" data-source="headline" data-field="open_gates" data-row="0">—</span> of <span class="cc-n" data-draw="t" data-fmt="int" data-source="headline" data-field="total_gates" data-row="0">—</span> commencement decisions are still open ahead of the 10 November start.</p>
+  </div>
+
+  <div class="cc-banner">Financial figures on the Overview, P&amp;L, Balance sheet, Budget, Close, Regulatory and Savings pages are <strong>sample data</strong> that show how the command center will read once connected to AIB's ledger and regulatory feeds. Programme dates, decision gates, risks and the close calendar come from the 25 October operating plan. Each card carries a Sample or Plan tag; the Data sources page lists what to connect.</div>
+
+  <nav class="cc-tabs" aria-label="Command center pages">
+    <button class="cc-tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button class="cc-tab" data-tab="pnl" aria-selected="false">P&amp;L</button>
+    <button class="cc-tab" data-tab="balance" aria-selected="false">Balance sheet and capital</button>
+    <button class="cc-tab" data-tab="budget" aria-selected="false">2027 budget</button>
+    <button class="cc-tab" data-tab="close" aria-selected="false">Close and controls</button>
+    <button class="cc-tab" data-tab="reg" aria-selected="false">Regulatory and audit</button>
+    <button class="cc-tab" data-tab="savings" aria-selected="false">Savings</button>
+    <button class="cc-tab" data-tab="programme" aria-selected="false">Programme and handover</button>
+    <button class="cc-tab" data-tab="sources" aria-selected="false">Data sources</button>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <section class="cc-page" id="tab-overview" data-page="overview">
+    <div class="cc-sec"><h2>Financial health</h2><span class="cc-tag cc-tag-sample">Sample data</span><p>September 2026 close. A tile turns amber when it misses its target.</p></div>
+    <div class="cc-kpis" id="kpi-all" data-draw="kpis" data-source="kpis ratios_monthly"></div>
+
+    <div class="cc-grid-wide">
+      <div class="cc-card" id="card-profit">
+        <h3>Net profit by month <span class="cc-tag cc-tag-sample">Sample</span></h3>
+        <p class="cc-note">Actual against budget and the same month last year, USD thousands.</p>
+        <div class="cc-chart" data-draw="chart-profit" data-source="monthly"></div>
+      </div>
+      <div class="cc-card" id="card-gates">
+        <h3>Decisions needed before 10 November <span class="cc-tag cc-tag-plan">Plan</span></h3>
+        <p class="cc-note">The five commencement gates in the operating plan. None is closed until the CEO confirms it in writing.</p>
+        <div class="cc-scroll">
+          <table class="cc-table" data-source="gates" data-row-key="id">
+            <thead><tr><th data-field="gate">Decision or dependency</th><th data-field="owner">AIB owner</th><th data-field="required_by" data-fmt="date">Needed by</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
+            <tbody data-draw="tbl" data-filter="category=Pre-commencement"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="cc-grid-wide">
+      <div class="cc-card" id="card-risks">
+        <h3>Principal delivery risks <span class="cc-tag cc-tag-plan">Plan</span></h3>
+        <p class="cc-note">Initial ratings from the CEO briefing risk register; re-rated after the first two-week health check.</p>
+        <div class="cc-scroll">
+          <table class="cc-table" data-source="risks" data-row-key="id">
+            <thead><tr><th data-field="risk">Risk</th><th data-field="rating" data-fmt="chip">Rating</th><th data-field="owner">Owner</th></tr></thead>
+            <tbody data-draw="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="cc-card" id="card-savings-ov">
+        <h3>Discovery savings pipeline <span class="cc-tag cc-tag-sample">Sample</span></h3>
+        <p class="cc-note">Annual run-rate saving by function and stage, USD thousands. The Discovery starts 1 November, so this shows the shape the pipeline will take.</p>
+        <div class="cc-chart" data-draw="chart-savings" data-source="savings_pipeline"></div>
+      </div>
+    </div>
+
+    <div class="cc-card" id="card-score-ov">
+      <h3>Value scorecard: baseline, now and target <span class="cc-tag cc-tag-sample">Sample</span></h3>
+      <p class="cc-note">The eight control measures from the operating plan. Targets are the plan's; baselines are agreed within the first two weeks. The bar shows how far each measure has moved from baseline to target.</p>
+      <div class="cc-score" data-draw="scorecard" data-source="value_scorecard"></div>
+    </div>
+  </section>
+
+  <!-- P&L -->
+  <section class="cc-page" id="tab-pnl" data-page="pnl" hidden>
+    <div class="cc-sec"><h2>Profit and loss</h2><span class="cc-tag cc-tag-sample">Sample data</span><p>January to September 2026, USD thousands. Variance is favourable when positive.</p></div>
+    <div class="cc-card">
+      <h3>Year to date against budget and last year</h3>
+      <p class="cc-note">Technology costs and credit impairment run above budget while fee income runs below, which is where the profit gap comes from.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="pnl_ytd" data-row-key="line">
+          <thead><tr><th data-field="line">Line</th><th class="r" data-field="actual" data-fmt="k">Actual</th><th class="r" data-field="budget" data-fmt="k">Budget</th><th class="r" data-field="variance" data-fmt="sk">Variance</th><th class="r" data-field="variance_pct" data-fmt="spct">Var %</th><th class="r" data-field="prior" data-fmt="k">Same period 2025</th><th class="r" data-field="yoy_pct" data-fmt="dpct">Change vs 2025</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="cc-grid-wide">
+      <div class="cc-card">
+        <h3>Net profit by month</h3>
+        <p class="cc-note">Bars are actual; the line is budget; the dashed line is last year.</p>
+        <div class="cc-chart" data-draw="chart-profit" data-source="monthly"></div>
+      </div>
+      <div class="cc-card">
+        <h3>Income and operating costs</h3>
+        <p class="cc-note">Solid lines are actual; dashed lines are budget. Costs exclude credit impairment and tax.</p>
+        <div class="cc-chart" data-draw="chart-incexp" data-source="monthly"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BALANCE SHEET -->
+  <section class="cc-page" id="tab-balance" data-page="balance" hidden>
+    <div class="cc-sec"><h2>Capital, liquidity and asset quality</h2><span class="cc-tag cc-tag-sample">Sample data</span><p>The ratios DAB and the Board look at first.</p></div>
+    <div class="cc-kpis" id="kpi-bs" data-draw="kpis" data-group="Capital and liquidity,Asset quality" data-source="kpis ratios_monthly"></div>
+    <div class="cc-card">
+      <h3>Six ratios over nine months</h3>
+      <p class="cc-note">Dashed line is the limit or target; a sample value is used until AIB's own limits are loaded.</p>
+      <div class="cc-multi" data-draw="chart-ratios" data-source="ratios_monthly"></div>
+    </div>
+    <div class="cc-card">
+      <h3>Statement of financial position</h3>
+      <p class="cc-note">USD thousands.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="bs_view" data-row-key="line">
+          <thead><tr><th data-field="line">Line</th><th class="r" data-field="sep26" data-fmt="k">30 Sep 2026</th><th class="r" data-field="aug26" data-fmt="k">31 Aug 2026</th><th class="r" data-field="dec25" data-fmt="k">31 Dec 2025</th><th class="r" data-field="chg_month" data-fmt="dpct">Change vs Aug</th><th class="r" data-field="chg_ytd" data-fmt="dpct">Change vs Dec</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUDGET -->
+  <section class="cc-page" id="tab-budget" data-page="budget" hidden>
+    <div class="cc-sec"><h2>2027 budget</h2><span class="cc-tag cc-tag-sample">Sample data</span><p>Operating costs by function. Board approval date is to be confirmed by AIB.</p></div>
+    <div class="cc-card">
+      <h3>2026 forecast against 2027 draft budget</h3>
+      <p class="cc-note">USD thousands. The 2026 forecast is nine months of actuals plus three months at the September run-rate.</p>
+      <div class="cc-chart" data-draw="chart-budget" data-source="budget2027"></div>
+    </div>
+    <div class="cc-card">
+      <h3>Budget build status by function</h3>
+      <p class="cc-note">Owners marked "to confirm" are placeholders until AIB names function heads.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="budget_view" data-row-key="function">
+          <thead><tr><th data-field="function">Function</th><th data-field="owner">Budget owner</th><th class="r" data-field="fcst_2026" data-fmt="k">2026 forecast</th><th class="r" data-field="budget_2027" data-fmt="k">2027 draft</th><th class="r" data-field="change_pct" data-fmt="dpct">Change</th><th data-field="status" data-fmt="chip">Status</th><th data-field="pct_complete" data-fmt="bar">Complete</th><th data-field="due" data-fmt="date">Due</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLOSE & CONTROLS -->
+  <section class="cc-page" id="tab-close" data-page="close" hidden>
+    <div class="cc-sec"><h2>Month-end close and balance control</h2><span class="cc-tag cc-tag-plan">Plan</span><span class="cc-tag cc-tag-sample">Sample balances</span><p>AIB working days run Saturday to Thursday.</p></div>
+    <div class="cc-card">
+      <h3>November close calendar</h3>
+      <p class="cc-note">The plan's close template mapped to AIB working days, with Friday as the rest day. DAB deadlines take priority and the template is reconfirmed in week one.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="close_calendar" data-row-key="wd">
+          <thead><tr><th data-field="wd">Day</th><th data-field="due_date" data-fmt="date">Date</th><th data-field="activity">Activity</th><th data-field="owner">Owner</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="cc-grid-wide">
+      <div class="cc-card">
+        <h3>Aged reconciling items <span class="cc-tag cc-tag-sample">Sample</span></h3>
+        <p class="cc-note">Value by age and account class, USD thousands. The target is items older than 30 days falling every month.</p>
+        <div class="cc-chart" data-draw="chart-aging" data-source="recons_aging"></div>
+      </div>
+      <div class="cc-card">
+        <h3>Reconciliation status by account class <span class="cc-tag cc-tag-sample">Sample</span></h3>
+        <p class="cc-note">Items and value, USD thousands.</p>
+        <div class="cc-scroll">
+          <table class="cc-table" data-source="recons_view" data-row-key="account_class">
+            <thead><tr><th data-field="account_class">Account class</th><th data-field="owner">Owner</th><th class="r" data-field="items_total" data-fmt="int">Items</th><th class="r" data-field="items_over_30" data-fmt="int">Over 30 days</th><th class="r" data-field="value_total" data-fmt="k">Value</th><th class="r" data-field="value_over_180" data-fmt="k">Over 180 days</th><th data-field="risk" data-fmt="chip">Risk</th></tr></thead>
+            <tbody data-draw="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="cc-card">
+      <h3>Value scorecard <span class="cc-tag cc-tag-sample">Sample</span></h3>
+      <p class="cc-note">Control, close and audit measures against the plan's targets.</p>
+      <div class="cc-score" data-draw="scorecard" data-source="value_scorecard"></div>
+    </div>
+  </section>
+
+  <!-- REGULATORY & AUDIT -->
+  <section class="cc-page" id="tab-reg" data-page="reg" hidden>
+    <div class="cc-sec"><h2>Regulatory returns and audit points</h2><span class="cc-tag cc-tag-sample">Sample data</span><p>AIB's accountable officers sign and submit; Finance prepares.</p></div>
+    <div class="cc-card">
+      <h3>DAB return calendar</h3>
+      <p class="cc-note">Placeholder return names, dates and signatories until AIB confirms the DAB calendar and the accountable officers in week one.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="dab_returns" data-row-key="return_name,period">
+          <thead><tr><th data-field="return_name">Return</th><th data-field="frequency">Frequency</th><th data-field="period">Period</th><th data-field="due_date" data-fmt="date">Due</th><th data-field="preparer">Prepared by</th><th data-field="signatory">Signed by</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="cc-card">
+      <h3>Open audit and inspection points</h3>
+      <p class="cc-note">Overdue high-rated points go to the CEO the same day.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="audit_points" data-row-key="id">
+          <thead><tr><th data-field="id">Ref</th><th data-field="source">Source</th><th data-field="finding">Finding</th><th data-field="rating" data-fmt="chip">Rating</th><th data-field="owner">Owner</th><th data-field="due_date" data-fmt="date">Due</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- SAVINGS -->
+  <section class="cc-page" id="tab-savings" data-page="savings" hidden>
+    <div class="cc-sec"><h2>Discovery and savings</h2><span class="cc-tag cc-tag-sample">Sample data</span><p>The Discovery runs six weeks from 1 November. Finance tracks each saving into the budget.</p></div>
+    <div class="cc-grid-wide">
+      <div class="cc-card">
+        <h3>Annual saving by function and stage</h3>
+        <p class="cc-note">USD thousands.</p>
+        <div class="cc-chart" data-draw="chart-savings" data-source="savings_pipeline"></div>
+      </div>
+      <div class="cc-card">
+        <h3>Saving as a share of function cost</h3>
+        <p class="cc-note">Against the 2026 operating cost forecast.</p>
+        <div class="cc-scroll">
+          <table class="cc-table" data-source="savings_view" data-row-key="function">
+            <thead><tr><th data-field="function">Function</th><th class="r" data-field="items" data-fmt="int">Items</th><th class="r" data-field="annual_saving" data-fmt="k">Annual saving</th><th class="r" data-field="one_off_cost" data-fmt="k">One-off cost</th><th class="r" data-field="pct_of_cost" data-fmt="pct">Of 2026 cost</th></tr></thead>
+            <tbody data-draw="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="cc-card">
+      <h3>Savings register</h3>
+      <p class="cc-note">Every option has a lever, an owner and a decision date. Control and security savings must leave the bank at least as well protected.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="savings_pipeline" data-row-key="id">
+          <thead><tr><th data-field="id">Ref</th><th data-field="function">Function</th><th data-field="item">Option</th><th data-field="lever">Lever</th><th class="r" data-field="annual_saving" data-fmt="k">Annual saving</th><th class="r" data-field="one_off_cost" data-fmt="kdash">One-off cost</th><th data-field="status" data-fmt="chip">Stage</th><th data-field="owner">Owner</th><th data-field="decision_date" data-fmt="date">Decision by</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRAMME -->
+  <section class="cc-page" id="tab-programme" data-page="programme" hidden>
+    <div class="cc-sec"><h2>Interim programme and handover</h2><span class="cc-tag cc-tag-plan">Plan</span><p>Minimum term to 9 February 2027, then monthly until the permanent CFO is appointed.</p></div>
+    <div class="cc-card">
+      <h3>Programme timeline</h3>
+      <p class="cc-note">Solid bars are dates in the plan; lighter bars are indicative until AIB confirms Board, year-end and audit dates.</p>
+      <div class="cc-chart" data-draw="chart-timeline" data-source="programme_ms"></div>
+    </div>
+    <div class="cc-grid-wide">
+      <div class="cc-card">
+        <h3>Decision gates and first-week inputs</h3>
+        <p class="cc-note">Pre-commencement gates must be closed before Aspiro acts on 10 November.</p>
+        <div class="cc-scroll">
+          <table class="cc-table" data-source="gates" data-row-key="id">
+            <thead><tr><th data-field="id">Ref</th><th data-field="gate">Decision or input</th><th data-field="owner">AIB owner</th><th data-field="required_by" data-fmt="date">Needed by</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
+            <tbody data-draw="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="cc-card">
+        <h3>Delivery risks and mitigations</h3>
+        <p class="cc-note">Each risk has a named owner and a written mitigation.</p>
+        <div class="cc-scroll">
+          <table class="cc-table" data-source="risks" data-row-key="id">
+            <thead><tr><th data-field="risk">Risk</th><th data-field="rating" data-fmt="chip">Rating</th><th data-field="mitigation">Mitigation</th><th data-field="owner">Owner</th></tr></thead>
+            <tbody data-draw="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="cc-grid-wide">
+      <div class="cc-card">
+        <h3>Permanent CFO handover pack <span class="cc-tag cc-tag-plan">Plan</span></h3>
+        <p class="cc-note">Built from day one so the permanent CFO inherits a working Finance function. Readiness is scored by Ashish and reviewed by William.</p>
+        <div class="cc-scroll">
+          <table class="cc-table" data-source="handover_pack" data-row-key="item">
+            <thead><tr><th data-field="item">Item</th><th data-field="owner">Owner</th><th data-field="pct_ready" data-fmt="bar">Ready</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
+            <tbody data-draw="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="cc-card">
+        <h3>Value log <span class="cc-tag cc-tag-sample">Sample</span></h3>
+        <p class="cc-note">One line per outcome, each tied to evidence the CEO can open. Impact is the annual saving in USD thousands where there is one.</p>
+        <div class="cc-scroll">
+          <table class="cc-table" data-source="value_log" data-row-key="week,area">
+            <thead><tr><th data-field="week" data-fmt="wk">Week</th><th data-field="area">Area</th><th data-field="outcome">Outcome</th><th class="r" data-field="impact_usd_k" data-fmt="kdash">Impact</th><th data-field="evidence">Evidence</th></tr></thead>
+            <tbody data-draw="tbl"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="cc-grid-wide">
+      <div class="cc-card">
+        <h3>Operating rhythm <span class="cc-tag cc-tag-plan">Plan</span></h3>
+        <ul class="cc-cols">
+          <li>Daily Finance check-in on Teams and a brief end-of-day exception note.</li>
+          <li>Weekly Finance team meeting, Aspiro internal quality review and a 30-minute CEO check-in.</li>
+          <li>Month-end close, then the CEO Finance report by working day 10.</li>
+          <li>Board and DAB papers to their calendars, reviewed by William before issue.</li>
+          <li>Escalation the same day: Finance team to Ashish, Ashish to William, William to the CEO.</li>
+          <li>One AIB-hosted Finance operating register holds priorities, risks, decisions and aged items.</li>
+        </ul>
+      </div>
+      <div class="cc-card">
+        <h3>What changes at handover</h3>
+        <ul class="cc-cols">
+          <li>The CFO keeps the register, close calendar, decisions log, desk notes, KPI definitions and data feeds.</li>
+          <li>Aspiro's value scorecard and value log close out as the engagement record.</li>
+          <li>William's independent review of Board and DAB packs becomes the CFO's own sign-off route.</li>
+          <li>The delegated authority below is replaced by the permanent CFO's DAB-approved authority.</li>
+          <li>At least two weeks of overlap; the interim lead stays reachable during the first close.</li>
+          <li>AIB leads the CFO search and the DAB approval; handover follows both.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cc-card">
+      <h3>Delegated authority during the interim <span class="cc-tag cc-tag-plan">Plan</span></h3>
+      <p class="cc-note">Aspiro leads Finance as a service within the CEO's written delegation. No Aspiro individual is appointed CFO or joins the Board of Management, and Aspiro is never a payment signatory.</p>
+      <div class="cc-scroll">
+        <table class="cc-table cc-auth">
+          <thead><tr><th>Area</th><th>Aspiro team can</th><th>Aspiro team cannot</th></tr></thead>
+          <tbody>
+            <tr><td>Journals</td><td>Review and approve within the CEO-delegated limit, with separate maker and checker</td><td>Prepare and approve the same journal, or approve above the limit</td></tr>
+            <tr><td>Payments</td><td>Review and challenge payment runs and supporting papers</td><td>Sign, authorise or release payments</td></tr>
+            <tr><td>Reconciliations and write-offs</td><td>Review, sign off and set clearance deadlines</td><td>Write off balances without AIB approval</td></tr>
+            <tr><td>Regulatory returns</td><td>Lead preparation and review</td><td>Sign or submit returns; AIB accountable officers do</td></tr>
+            <tr><td>Systems</td><td>Use preparer and reviewer roles</td><td>Hold administrator or user-management rights</td></tr>
+            <tr><td>People</td><td>Direct and prioritise daily work</td><td>Make hiring, pay or disciplinary decisions</td></tr>
+            <tr><td>Auditors and DAB</td><td>Answer information requests and handle routine liaison</td><td>Agree adjustments or commitments without AIB approval</td></tr>
+            <tr><td>Accounting policy</td><td>Recommend changes</td><td>Change policy without the CEO and, where required, the Board</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA SOURCES -->
+  <section class="cc-page" id="tab-sources" data-page="sources" hidden>
+    <div class="cc-sec"><h2>Where each number will come from</h2><span class="cc-tag cc-tag-plan">Plan</span><p>The connection plan for turning sample data into live data.</p></div>
+    <div class="cc-card">
+      <h3>Feed map</h3>
+      <p class="cc-note">Sample means the page shows illustrative rows. Plan documents means the rows come from the 25 October operating plan. To connect means a feed from an AIB system is still to be agreed with AIB Finance and IT, using AIB systems and storage only.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="data_feeds" data-row-key="area">
+          <thead><tr><th data-field="area">Area</th><th data-field="views">Shown on</th><th data-field="target_source">Target source</th><th data-field="cadence">Refresh</th><th data-field="owner">Owner</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+</div>
+<footer class="foot">
+  <div class="foot-in">
+    <img src="assets/aib-logo-white.png" alt="Afghanistan International Bank" width="62" height="22">
+    <span><strong>Aspiro Management Consultants</strong> &middot; Interim Financial Support &middot; Prototype with sample data, not AIB financial results.</span>
+  </div>
+</footer>
+<script src="vendor/d3.min.js"></script>
+<script src="data.js"></script>
+<script src="shim.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

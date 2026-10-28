@@ -1,0 +1,101 @@
+/* AIB theme for the CFO command center prototype.
+   Brand values below are taken from the AIB / Aspiro engagement-letter letterhead:
+   deep purple band, white AIB mark, teal accent rule.
+   Replace the --aib-* values (and assets/aib-logo-white.png) with AIB's official brand kit when available. */
+
+@font-face { font-family: "DM Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url("assets/fonts/dm-sans-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-weight: 500; font-style: normal; font-display: swap; src: url("assets/fonts/dm-sans-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-weight: 700; font-style: normal; font-display: swap; src: url("assets/fonts/dm-sans-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "DM Serif Display"; font-weight: 400; font-style: normal; font-display: swap; src: url("assets/fonts/dm-serif-display-latin-400-normal.woff2") format("woff2"); }
+
+:root {
+  --aib-ink: #1a0830;
+  --aib-ink-soft: #2a1448;
+  --aib-accent: #3fb9a0;
+
+  --font-anthropic-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-anthropic-serif: "DM Serif Display", Georgia, "Times New Roman", serif;
+
+  --color-fg: #1b1530;
+  --color-fg-muted: #5f5873;
+  --color-bg: #f6f4f9;
+  --color-panel: #ffffff;
+  --color-border-line: #e3dfea;
+  --color-ok: #1b7a5c;
+  --color-warn: #a35f00;
+  --color-bad: #b3261e;
+
+  --cds-font-size-caption: 12px;
+  --cds-font-size-body: 14px;
+  --cds-font-size-heading: 16px;
+  --cds-font-size-title: 30px;
+  --cds-font-weight-medium: 500;
+  --cds-radius: 10px;
+  --cds-pad-xs: 4px;
+  --cds-pad-sm: 8px;
+  --cds-pad-md: 12px;
+  --cds-pad-lg: 18px;
+  --cds-pad-xl: 28px;
+  --cds-gap-xs: 4px;
+  --cds-gap-sm: 10px;
+  --cds-gap-md: 16px;
+  --cds-gap-lg: 28px;
+
+  --cds-chart-muted: #cdc7da;
+  --cds-chart-grid: #ece8f2;
+  --cds-chart-axis: #9a93ad;
+  --cds-chart-reference: #8c85a0;
+  --cds-chart-status-critical: #c0392b;
+  --cds-chart-1: #5b2a86;
+  --cds-surface-popover: #ffffff;
+  --cds-border: #d8d3e2;
+  --cds-text-secondary: #5f5873;
+  --cds-shadow-popover: 0 8px 28px rgba(26, 8, 48, 0.18);
+  --cds-dur-slow: 300ms;
+  --cds-ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+* { -webkit-font-smoothing: antialiased; }
+html { scroll-padding-top: 56px; }
+body { margin: 0; background: var(--color-bg); color: var(--color-fg); font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-body); line-height: 1.45; }
+
+/* ---- branded header ---- */
+.brand { background: var(--aib-ink); border-bottom: 4px solid var(--aib-accent); color: #fff; }
+.brand-in { max-width: 1320px; margin-inline: auto; padding: 22px clamp(12px, 3vw, 32px); display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.brand-logo { height: 44px; width: auto; display: block; }
+.brand-rule { width: 1px; align-self: stretch; background: rgba(255, 255, 255, 0.22); min-height: 40px; }
+.brand-title { flex: 1 1 18rem; min-width: 0; }
+.brand-eyebrow { margin: 0 0 2px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--aib-accent); font-weight: 500; }
+.brand-h1 { margin: 0; font-family: var(--font-anthropic-serif); font-weight: 400; font-size: clamp(26px, 4vw, 38px); line-height: 1.1; color: #fff; }
+.brand-meta { margin: 0; font-size: 12px; line-height: 1.5; color: rgba(255, 255, 255, 0.72); text-align: right; }
+.brand-meta strong { color: #fff; font-weight: 500; }
+@media (max-width: 640px) { .brand-meta { text-align: left; } .brand-rule { display: none; } }
+
+#dash-root { --dash-gutter: clamp(12px, 3vw, 32px); padding-inline: var(--dash-gutter); }
+.cc-head { padding-block: 20px 4px; }
+.cc-takeaway { font-size: 17px; }
+
+/* sticky page navigation */
+.cc-tabs { position: sticky; top: 0; z-index: 20; background: var(--color-bg); margin-inline: calc(-1 * var(--dash-gutter)); padding-inline: var(--dash-gutter); }
+.cc-tab[aria-selected="true"] { border-bottom-color: var(--aib-accent); border-bottom-width: 3px; }
+.cc-tab:focus-visible { outline: 2px solid var(--aib-accent); outline-offset: -2px; }
+
+.cc-card, .cc-tile { box-shadow: 0 1px 2px rgba(26, 8, 48, 0.04); }
+.cc-tile-v { color: var(--aib-ink); }
+.cc-table th { color: var(--color-fg-muted); }
+.cc-banner { border-left-color: var(--aib-accent); }
+
+/* ---- footer ---- */
+.foot { margin-top: 40px; background: var(--aib-ink); color: rgba(255, 255, 255, 0.75); font-size: 12px; }
+.foot-in { max-width: 1320px; margin-inline: auto; padding: 18px clamp(12px, 3vw, 32px); display: flex; gap: 14px 28px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+.foot img { height: 22px; width: auto; opacity: 0.9; }
+.foot strong { color: #fff; font-weight: 500; }
+
+@media print { .cc-tabs { position: static; } .cc-page[hidden] { display: none; } }
+
+/* layout refinements from review */
+.cc-kpis { grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.cc-srow { grid-template-columns: minmax(10rem, 1.2fr) minmax(8rem, 2fr) 21rem; }
+@media (max-width: 900px) { .cc-srow { grid-template-columns: 1fr; gap: .25rem; } .cc-srow-v { text-align: left; } }
+.cc-scroll { max-height: none; overflow-x: auto; overflow-y: visible; }
+.cc-multi { grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); }
