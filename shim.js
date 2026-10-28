@@ -43,7 +43,21 @@
     params: function () { return {}; },
     setParams: function () {},
     resetParams: function () {},
-    refresh: function () {},
+    // Clears cached calculations and redraws everything visible (after a period or comparison change)
+    refresh: function () {
+      memo = {};
+      // hidden drawings redraw when their page is next shown
+      Array.prototype.forEach.call(document.querySelectorAll('[data-draw]'), function (el) { el.__drawn = false; });
+      runAll(true);
+    },
+    // Redraws one drawing by name, e.g. a chart after a what-if slider moves
+    redraw: function (name) {
+      var els = document.querySelectorAll('[data-draw="' + name + '"]');
+      Array.prototype.forEach.call(els, function (el) {
+        if (hidden(el) || !draws[name]) return;
+        try { draws[name](el); } catch (e) { console.error('Drawing failed: ' + name, e); }
+      });
+    },
     loader: function () {},
     setLink: function (name) { try { history.replaceState(null, '', '#' + name); } catch (e) { /* ignore */ } }
   };

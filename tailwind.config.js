@@ -1,7 +1,7 @@
 /* Tailwind v3 config for option-2.html. Rebuild option-2.css after changing classes:
    npx tailwindcss@3.4.19 -c tailwind.config.js -i option-2.src.css -o option-2.css --minify */
 module.exports = {
-  content: ['./option-2.html'],
+  content: ['./option-2.html', './option-2.js'],
   theme: {
     extend: {
       colors: {

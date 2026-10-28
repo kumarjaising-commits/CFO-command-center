@@ -1,41 +1,22 @@
 (function () {
   'use strict';
 
+  const D = window.AIB_DATA;
+  const ALL = AIBA.monthsOf(D.pnl_monthly);
+  const period = () => AIBState.period(ALL);
+
   /* ---------- calculations (datasets joined or summed) ---------- */
-  dash.calc('pnl_ytd', {
-    inputs: ['pnl_monthly'],
-    title: 'P&L year to date',
-    description: 'Sums each P&L line from January to September and adds subtotals and variances.',
-    fn: (pnl_monthly) => {
-      const agg = {};
-      pnl_monthly.forEach((r) => {
-        const o = agg[r.line] || (agg[r.line] = { grp: r.grp, a: 0, b: 0, p: 0 });
-        o.a += r.actual; o.b += r.budget; o.p += r.prior;
-      });
-      const row = (line, kind, grp, a, b, p) => {
-        const v = grp === 'income' ? a - b : b - a;
-        return { line, kind, actual: a, budget: b, variance: v, variance_pct: b ? (v / b) * 100 : null, prior: p, yoy_pct: p ? (a / p - 1) * 100 : null };
-      };
-      const R = (n) => row(n, 'line', agg[n].grp, agg[n].a, agg[n].b, agg[n].p);
-      const S = (names) => ['a', 'b', 'p'].map((k) => names.reduce((s, n) => s + agg[n][k], 0));
-      const inc = ['Net interest income', 'Fee and commission income', 'FX and trading income', 'Other income'];
-      const opx = ['Staff costs', 'Technology and IT', 'Premises and administration', 'Other operating costs'];
-      const ti = S(inc), to = S(opx);
-      const imp = agg['Credit impairment'], tax = agg['Tax'];
-      const pbt = [ti[0] - to[0] - imp.a, ti[1] - to[1] - imp.b, ti[2] - to[2] - imp.p];
-      const net = [pbt[0] - tax.a, pbt[1] - tax.b, pbt[2] - tax.p];
-      return [
-        ...inc.map(R),
-        row('Total income', 'total', 'income', ti[0], ti[1], ti[2]),
-        ...opx.map(R),
-        row('Total operating costs', 'total', 'expense', to[0], to[1], to[2]),
-        R('Credit impairment'),
-        row('Profit before tax', 'total', 'income', pbt[0], pbt[1], pbt[2]),
-        R('Tax'),
-        row('Net profit', 'total', 'income', net[0], net[1], net[2])
-      ];
-    }
-  });
+  // Re-registered when the period changes, which clears the cached result. Sums live in analytics.js,
+  // shared with Option 2 so both designs show the same numbers.
+  function periodCalcs() {
+    dash.calc('pnl_ytd', {
+      inputs: ['pnl_monthly'],
+      title: 'P&L for the selected period',
+      description: 'Sums each P&L line over the selected months and adds subtotals and variances.',
+      fn: (pnl_monthly) => AIBA.pnlSummary(pnl_monthly, period().months)
+    });
+  }
+  periodCalcs();
 
   dash.calc('monthly', {
     inputs: ['pnl_monthly'],
@@ -55,62 +36,25 @@
     }
   });
 
-  dash.calc('headline', {
-    inputs: ['pnl_monthly', 'gates'],
-    title: 'Headline figures',
-    description: 'Year-to-date net profit against budget, and how many pre-commencement gates are still open.',
-    fn: (pnl_monthly, gates) => {
-      let a = 0, b = 0;
-      pnl_monthly.forEach((r) => { const s = r.grp === 'income' ? 1 : -1; a += s * r.actual; b += s * r.budget; });
-      const pre = gates.filter((g) => g.category === 'Pre-commencement');
-      return [{ ytd_net: a, ytd_budget: b, var_pct: (a / b - 1) * 100, open_gates: pre.filter((g) => g.status !== 'Closed').length, total_gates: pre.length }];
-    }
-  });
-
   dash.calc('bs_view', {
     inputs: ['balance_sheet'],
     title: 'Balance sheet with changes',
     description: 'Adds the change against the prior month and against the year start to each balance sheet line.',
-    fn: (balance_sheet) => balance_sheet.map((r) => ({
-      line: r.line, kind: r.kind, sep26: r.sep26, aug26: r.aug26, dec25: r.dec25,
-      chg_month: r.aug26 ? (r.sep26 / r.aug26 - 1) * 100 : null,
-      chg_ytd: r.dec25 ? (r.sep26 / r.dec25 - 1) * 100 : null
-    }))
+    fn: (balance_sheet) => AIBA.bsView(balance_sheet)
   });
 
   dash.calc('budget_view', {
     inputs: ['budget2027'],
     title: '2027 budget with total',
     description: 'Adds the change against the 2026 forecast to each function and a total row.',
-    fn: (budget2027) => {
-      const rows = budget2027.map((r) => ({
-        function: r.function, kind: 'line', owner: r.owner, fcst_2026: r.fcst_2026, budget_2027: r.budget_2027,
-        change_pct: (r.budget_2027 / r.fcst_2026 - 1) * 100, status: r.status, pct_complete: r.pct_complete, due: r.due
-      }));
-      const f = rows.reduce((s, r) => s + r.fcst_2026, 0);
-      const b = rows.reduce((s, r) => s + r.budget_2027, 0);
-      const avg = rows.reduce((s, r) => s + r.pct_complete, 0) / rows.length;
-      rows.push({ function: 'Total operating costs', kind: 'total', owner: '', fcst_2026: f, budget_2027: b, change_pct: (b / f - 1) * 100, status: '', pct_complete: Math.round(avg), due: null });
-      return rows;
-    }
+    fn: (budget2027) => AIBA.budgetView(budget2027)
   });
 
   dash.calc('recons_view', {
     inputs: ['recons_aging'],
     title: 'Reconciliations with totals',
     description: 'Totals items and value per account class and for items over 30 and over 180 days.',
-    fn: (recons_aging) => {
-      const rows = recons_aging.map((r) => ({
-        account_class: r.account_class, kind: 'line', owner: r.owner,
-        items_total: r.items_0_30 + r.items_31_90 + r.items_91_180 + r.items_180_plus,
-        items_over_30: r.items_31_90 + r.items_91_180 + r.items_180_plus,
-        value_total: r.value_0_30 + r.value_31_90 + r.value_91_180 + r.value_180_plus,
-        value_over_180: r.value_180_plus, risk: r.risk
-      }));
-      const t = (k) => rows.reduce((s, r) => s + r[k], 0);
-      rows.push({ account_class: 'Total', kind: 'total', owner: '', items_total: t('items_total'), items_over_30: t('items_over_30'), value_total: t('value_total'), value_over_180: t('value_over_180'), risk: '' });
-      return rows;
-    }
+    fn: (recons_aging) => AIBA.reconsView(recons_aging)
   });
 
   dash.calc('savings_view', {
@@ -152,12 +96,7 @@
   const pd = (s) => new Date(s + 'T00:00:00Z');
   const unitFmt = (v, u) => (v == null || isNaN(v) ? '—' : u === 'USDk' ? money(v) : u === '%' ? v.toFixed(1) + '%' : u === 'x' ? v.toFixed(2) + '×' : fmtInt(v));
 
-  const TONE = {
-    ok: ['Closed', 'Complete', 'Submitted', 'Approved', 'Realised', 'Effective', 'On track', 'Done', 'Low'],
-    warn: ['In review', 'In progress', 'Drafting', 'Validated', 'Due today', 'Identified', 'Medium', 'Open', 'In preparation'],
-    bad: ['Overdue', 'High', 'Late', 'Breach', 'Deficient']
-  };
-  const toneOf = (s) => (TONE.ok.includes(s) ? 'ok' : TONE.warn.includes(s) ? 'warn' : TONE.bad.includes(s) ? 'bad' : '');
+  const toneOf = AIBA.toneOf;
 
   const el$ = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
@@ -223,11 +162,10 @@
     if (!pages.some((p) => p.dataset.page === name)) return;
     tabs.forEach((t) => t.setAttribute('aria-selected', t.dataset.tab === name ? 'true' : 'false'));
     pages.forEach((p) => { p.hidden = p.dataset.page !== name; });
-    if (push) dash.setLink('tab-' + name);
+    if (push) AIBState.set({ tab: name });
   }
   tabs.forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab, true)));
-  const h0 = location.hash.slice(1);
-  if (h0.indexOf('tab-') === 0) showTab(h0.slice(4));
+  showTab(AIBState.get('tab'));
 
   /* ---------- text figures ---------- */
   dash.draw('t', (el) => {
@@ -265,7 +203,7 @@
     const table = tb.closest('table');
     const id = table.dataset.source;
     const g = dash.data(id);
-    const ths = [...table.querySelectorAll('thead th[data-field]')];
+    const ths = [...table.querySelectorAll('thead th[data-field]')].filter((th) => !th.hidden);
     tb.replaceChildren();
     if (g.status !== 'ok') {
       if (g.status === 'error' || g.status === 'connect' || g.status === 'declined' || g.status === 'missing') {
@@ -292,7 +230,9 @@
     const groups = el.dataset.group ? el.dataset.group.split(',') : null;
     const rows = dash.data('kpis').data.filter((r) => !groups || groups.indexOf(r.group) >= 0);
     const rat = d3.group(dash.data('ratios_monthly').data, (d) => d.metric);
-    rows.forEach((r) => {
+    const p = period();
+    rows.forEach((r0) => {
+      const r = AIBA.kpiForPeriod(D, r0, p);
       const up = r.direction === 'up';
       const met = up ? r.value >= r.target : r.value <= r.target;
       const gap = Math.abs(r.value - r.target) / Math.abs(r.target);
@@ -301,15 +241,17 @@
       const l = el$('div', 'cc-tile-l'); l.append(el$('span', 'cc-dot ' + tone), document.createTextNode(r.label));
       const v = el$('div', 'cc-tile-v', unitFmt(r.value, r.unit));
       const d = el$('div', 'cc-tile-d');
-      const diff = r.unit === '%' ? r.value - r.prior : (r.value / r.prior - 1) * 100;
-      const goodMove = up ? diff >= 0 : diff <= 0;
-      const dt = el$('span', goodMove ? 'good' : 'badc', r.unit === '%' ? signed(diff, 1) + ' pp' : signed(diff, 1) + '%');
-      d.append(dt, document.createTextNode(' ' + r.prior_label));
+      if (r.prior != null) {
+        const diff = r.unit === '%' ? r.value - r.prior : (r.value / r.prior - 1) * 100;
+        const goodMove = up ? diff >= 0 : diff <= 0;
+        const dt = el$('span', goodMove ? 'good' : 'badc', r.unit === '%' ? signed(diff, 1) + ' pp' : signed(diff, 1) + '%');
+        d.append(dt, document.createTextNode(' ' + r.prior_label));
+      } else d.textContent = 'No earlier month to compare';
       const t = el$('div', 'cc-tile-d', (r.unit === 'USDk' ? 'Budget ' : up ? 'Target ≥ ' : 'Target ≤ ') + unitFmt(r.target, r.unit));
       tile.append(l, v, d, t);
       const s = rat.get(r.series);
       if (s && s.length > 1) {
-        const vals = s.slice().sort((a, b) => (a.month < b.month ? -1 : 1)).map((x) => x.value);
+        const vals = s.slice().sort((a, b) => (a.month < b.month ? -1 : 1)).filter((x) => x.month <= p.endMonth).map((x) => x.value);
         const x = d3.scaleLinear([0, vals.length - 1], [2, 158]);
         const y = d3.scaleLinear(d3.extent(vals), [24, 3]);
         const svg = d3.create('svg').attr('width', '100%').attr('height', 28).attr('viewBox', '0 0 160 28').attr('preserveAspectRatio', 'none');
@@ -320,56 +262,73 @@
     });
   });
 
-  /* ---------- month charts (bars and lines) ---------- */
-  function monthChart(el, rows, o) {
-    el.replaceChildren();
-    const series = [...(o.bars || []), ...o.lines];
-    el.append(legend(series.map((s) => ({ label: s.label, color: s.color }))));
-    const W = Math.max(280, el.clientWidth || 600), H = 250;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
-    const vals = rows.flatMap((r) => series.map((s) => r[s.k]));
-    const lo = Math.min(0, d3.min(vals)), hi = d3.max(vals) * 1.08;
-    const y = d3.scaleLinear([lo, hi], [H - 26, 8]).nice(5);
-    const tickLabels = y.ticks(5).map(o.fmtY);
-    const left = Math.ceil(measure(svg, tickLabels, 11)) + 10;
-    const x = d3.scaleBand(rows.map((r) => r.month), [left, W - 8]).paddingInner(0.3).paddingOuter(0.15);
-    svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', left).attr('x2', W - 8).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
-    svg.append('g').selectAll('text').data(y.ticks(5)).join('text').attr('x', left - 6).attr('y', (d) => y(d) + 4).attr('text-anchor', 'end').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text(o.fmtY);
-    svg.append('g').selectAll('text').data(rows).join('text').attr('x', (r) => x(r.month) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((r) => MON(pd(r.month)));
-    (o.bars || []).forEach((b) => {
-      svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (r) => x(r.month)).attr('width', Math.min(32, x.bandwidth())).attr('y', (r) => y(Math.max(0, r[b.k]))).attr('height', (r) => Math.abs(y(r[b.k]) - y(0))).attr('rx', 3).attr('fill', b.color).attr('transform', (r) => `translate(${(x.bandwidth() - Math.min(32, x.bandwidth())) / 2},0)`);
-    });
-    o.lines.forEach((s) => {
-      const pts = rows.map((r) => [x(r.month) + x.bandwidth() / 2, y(r[s.k])]);
-      svg.append('path').attr('d', d3.line()(pts)).attr('fill', 'none').attr('stroke', s.color).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('stroke-dasharray', s.dash || null);
-      if (!s.dash) svg.append('g').selectAll('circle').data(pts).join('circle').attr('cx', (p) => p[0]).attr('cy', (p) => p[1]).attr('r', 3).attr('fill', s.color);
-    });
-    const tip = tipFor(el);
-    svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (r) => x(r.month) - x.step() * 0.1).attr('width', x.step()).attr('y', 0).attr('height', H - 20).attr('fill', 'transparent')
-      .on('mousemove', (ev, r) => tip.show(MONY(pd(r.month)), series.map((s) => ({ c: s.color, t: s.label + ': ' + o.fmtT(r[s.k]) })), ev))
-      .on('mouseleave', () => tip.hide());
+  /* ---------- trend charts (shared renderer in charts.js) ---------- */
+  const CHART_DEFAULT = { profit: 'bar', incexp: 'line', forecast: 'line' };
+  const chartType = (id) => AIBState.get('t-' + id) || CHART_DEFAULT[id];
+  const cmp = () => AIBState.get('c');
+  const THEME = { grid: 'var(--cds-chart-grid)', text: 'var(--color-fg-muted)', highlight: 'rgba(91, 42, 134, 0.07)', forecastBg: 'rgba(47, 165, 143, 0.07)' };
+  const UI = {
+    legend: (items) => legend(items),
+    tip: (host) => tipFor(host),
+    table: (head, rows) => {
+      const wrap = el$('div', 'cc-scroll');
+      const t = el$('table', 'cc-table');
+      const hr = el$('tr');
+      head.forEach((h, i) => { const th = el$('th', i ? 'r' : '', h); hr.append(th); });
+      const th = el$('thead'); th.append(hr);
+      const tb = el$('tbody');
+      rows.forEach((r) => {
+        const tr = el$('tr', r.forecast ? 'cc-fc-row' : r.highlight ? 'cc-hl-row' : '');
+        r.cells.forEach((c, i) => tr.append(el$('td', i ? 'r' : 'nw', c || (i ? '' : '—'))));
+        tb.append(tr);
+      });
+      t.append(th, tb); wrap.append(t);
+      return wrap;
+    }
+  };
+  const kfmt = (v) => fmtInt(v) + 'k';
+
+  function trendCfg(id, m, opts) {
+    const p = period();
+    const s = AIBA.measureSeries(D.pnl_monthly, m).filter((r) => r.month <= p.endMonth);
+    const series = [{ label: 'Actual', color: dash.colors[0], role: 'main', values: s.map((r) => r.actual) }];
+    if (/b/.test(cmp())) series.push({ label: 'Budget', color: dash.colors[1], role: 'line', values: s.map((r) => r.budget) });
+    if (/p/.test(cmp())) series.push({ label: 'Same month 2025', color: 'var(--cds-chart-reference)', role: 'dash', values: s.map((r) => r.prior) });
+    let forecast = null;
+    if (opts.forecast && p.isLatest) {
+      const f = AIBA.measureForecast(D.pnl_monthly, m, { scenario: opts.scenario });
+      forecast = { label: 'Forecast', color: dash.colors[0], months: f.map((x) => x.month), mean: f.map((x) => x.mean), lo: f.map((x) => x.lo), hi: f.map((x) => x.hi) };
+    }
+    return { months: s.map((r) => r.month), series, forecast, highlight: p.months, type: chartType(id), fmtY: fmtInt, fmtT: kfmt, theme: THEME, ui: UI };
   }
 
   dash.draw('chart-profit', (el) => {
-    if (notReady(el, ['monthly'])) return;
-    monthChart(el, dash.data('monthly').data, {
-      bars: [{ k: 'net', label: 'Actual', color: dash.colors[0] }],
-      lines: [{ k: 'net_b', label: 'Budget', color: dash.colors[1] }, { k: 'net_p', label: 'Same month 2025', color: 'var(--cds-chart-reference)', dash: '4 3' }],
-      fmtY: (v) => fmtInt(v), fmtT: (v) => fmtInt(v) + 'k'
-    });
+    if (notReady(el, ['pnl_monthly'])) return;
+    AIBCharts.trend(el, trendCfg('profit', AIBState.get('m'), { forecast: AIBState.get('fc') === '1' }));
   });
 
   dash.draw('chart-incexp', (el) => {
     if (notReady(el, ['monthly'])) return;
-    monthChart(el, dash.data('monthly').data, {
-      lines: [
-        { k: 'income', label: 'Income', color: dash.colors[0] },
-        { k: 'opex', label: 'Operating costs', color: dash.colors[2] },
-        { k: 'income_b', label: 'Income budget', color: dash.colors[0], dash: '4 3' },
-        { k: 'opex_b', label: 'Cost budget', color: dash.colors[2], dash: '4 3' }
-      ],
-      fmtY: (v) => fmtInt(v), fmtT: (v) => fmtInt(v) + 'k'
-    });
+    const p = period();
+    const rows = dash.data('monthly').data.filter((r) => r.month <= p.endMonth);
+    const lastYearOnly = cmp() === 'p';
+    const series = [
+      { label: 'Income', color: dash.colors[0], role: 'main', values: rows.map((r) => r.income) },
+      { label: 'Operating costs', color: dash.colors[2], role: 'main', values: rows.map((r) => r.opex) }
+    ];
+    if (/b/.test(cmp())) series.push({ label: 'Income budget', color: dash.colors[0], role: 'dash', values: rows.map((r) => r.income_b) }, { label: 'Cost budget', color: dash.colors[2], role: 'dash', values: rows.map((r) => r.opex_b) });
+    else if (lastYearOnly) series.push({ label: 'Income 2025', color: dash.colors[0], role: 'dash', values: rows.map((r) => r.income_p) }, { label: 'Costs 2025', color: dash.colors[2], role: 'dash', values: rows.map((r) => r.opex_p) });
+    AIBCharts.trend(el, { months: rows.map((r) => r.month), series, forecast: null, highlight: p.months, type: chartType('incexp'), fmtY: fmtInt, fmtT: kfmt, theme: THEME, ui: UI });
+  });
+
+  dash.draw('chart-forecast', (el) => {
+    if (notReady(el, ['pnl_monthly'])) return;
+    const cfg = trendCfg('forecast', AIBState.get('fm'), { forecast: true, scenario: AIBState.scenario() });
+    if (!period().isLatest) {
+      el.replaceChildren(el$('p', 'cc-note', 'The forecast starts after the latest month of actuals. Choose a period that ends in ' + AIBA.monthLong(ALL[ALL.length - 1]) + ' to see it.'));
+      return;
+    }
+    AIBCharts.trend(el, cfg);
   });
 
   /* ---------- ratio small multiples ---------- */
@@ -559,5 +518,222 @@
       row.append(l, bar, v);
       el.append(row);
     });
+  });
+
+  /* ---------- period, comparison and chart controls ---------- */
+  const CMP = [['bp', 'Budget and last year'], ['b', 'Budget'], ['p', 'Last year'], ['n', 'No comparison']];
+  const TYPES = [['bar', 'Bar'], ['line', 'Line'], ['area', 'Area'], ['table', 'Table']];
+  const MONTH_OPTS = ALL.map((m) => [m.slice(0, 7), AIBA.monthShort(m)]);
+
+  function field(label, options) {
+    const wrap = el$('label', 'cc-field');
+    const l = el$('span', '', label);
+    const select = document.createElement('select');
+    options.forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; select.append(o); });
+    wrap.append(l, select);
+    return { wrap, select, label: l };
+  }
+
+  dash.draw('filters', (el) => {
+    if (!el.__f) {
+      const mode = field('Period', AIBA.PERIOD_MODES.map((m) => [m.id, m.label]));
+      const from = field('From', MONTH_OPTS);
+      const to = field('Month', MONTH_OPTS);
+      const c = field('Compare with', CMP);
+      mode.select.addEventListener('change', () => AIBState.set({ p: mode.select.value }));
+      from.select.addEventListener('change', () => AIBState.set({ s: from.select.value }));
+      to.select.addEventListener('change', () => AIBState.set({ e: to.select.value }));
+      c.select.addEventListener('change', () => AIBState.set({ c: c.select.value }));
+      const lbl = el$('p', 'cc-filters-l');
+      const ai = el$('a', 'cc-ai-link', 'AI analytics');
+      ai.href = '#tab-ai';
+      ai.addEventListener('click', (e) => { e.preventDefault(); showTab('ai', true); });
+      el.append(mode.wrap, from.wrap, to.wrap, c.wrap, lbl, ai);
+      el.__f = { mode, from, to, c, lbl };
+    }
+    const f = el.__f, p = period();
+    f.mode.select.value = p.mode; f.from.select.value = p.start; f.to.select.value = p.end; f.c.select.value = cmp();
+    f.from.wrap.hidden = p.mode !== 'r';
+    f.to.label.textContent = p.mode === 'm' ? 'Month' : p.mode === 'r' ? 'To' : 'Up to';
+    f.lbl.textContent = 'Showing ' + p.label;
+  });
+
+  dash.draw('tools', (el) => {
+    const id = el.dataset.chart, opts = (el.dataset.opts || '').split(','), key = el.dataset.key || 'm';
+    if (!el.__seg) {
+      const seg = el$('div', 'cc-seg');
+      seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', 'Chart type');
+      TYPES.forEach(([v, l]) => {
+        const b = el$('button', '', l); b.type = 'button'; b.dataset.v = v;
+        b.addEventListener('click', () => AIBState.set({ ['t-' + id]: v }));
+        seg.append(b);
+      });
+      el.append(seg);
+      el.__seg = seg;
+      if (opts.indexOf('measure') >= 0) {
+        const f = field('Show', AIBA.MEASURES.map((x) => [x.id, x.label]));
+        f.select.addEventListener('change', () => AIBState.set({ [key]: f.select.value }));
+        el.append(f.wrap); el.__m = f;
+      }
+      if (opts.indexOf('forecast') >= 0) {
+        const lab = el$('label', 'cc-check'); const cb = document.createElement('input'); cb.type = 'checkbox';
+        cb.addEventListener('change', () => AIBState.set({ fc: cb.checked ? '1' : '0' }));
+        lab.append(cb, document.createTextNode('Forecast to December'));
+        el.append(lab); el.__fc = cb; el.__fcl = lab;
+      }
+    }
+    [...el.__seg.children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === chartType(id) ? 'true' : 'false'));
+    if (el.__m) el.__m.select.value = AIBState.get(key);
+    if (el.__fc) {
+      const latest = period().isLatest;
+      el.__fc.checked = AIBState.get('fc') === '1';
+      el.__fc.disabled = !latest;
+      el.__fcl.title = latest ? '' : 'The forecast starts after ' + AIBA.monthLong(ALL[ALL.length - 1]) + '; choose a period ending then.';
+    }
+  });
+
+  /* ---------- text that follows the period ---------- */
+  dash.draw('takeaway', (el) => {
+    const p = period();
+    const net = AIBA.pnlSummary(D.pnl_monthly, p.months).find((r) => r.line === 'Net profit');
+    const n = AIBA.narrative(D, p);
+    const b = (t) => el$('span', 'cc-n', t);
+    el.replaceChildren(p.phrase + ', net profit is ', b(money(net.actual)), ', ', b(Math.abs(net.variance_pct).toFixed(1) + '% ' + (net.variance_pct >= 0 ? 'above' : 'below')), ' budget. ',
+      b(String(n.open)), ' of ', b(String(n.gates)), ' commencement decisions are still open ahead of the 10 November start.');
+  });
+
+  const CMP_PHRASE = { bp: ' against budget and last year', b: ' against budget', p: ' against last year', n: '' };
+  const LONGM = (m) => AIBA.monthLong(m).split(' ')[0];
+  dash.draw('ptext', (el) => {
+    const p = period(), c = cmp(), type = chartType(el.dataset.chart || 'profit');
+    const range = p.months.length === 1 ? AIBA.monthLong(p.months[0]) : LONGM(p.months[0]) + ' to ' + AIBA.monthLong(p.endMonth);
+    const T = {
+      label: () => p.label,
+      kpinote: () => (p.isLatest && p.mode === 'y' ? AIBA.monthLong(p.endMonth) + ' close' : 'Net profit for ' + p.label + '; ratios at ' + AIBA.monthLong(p.endMonth) + ' close') + '. A tile turns amber when it misses its target.',
+      range: () => range,
+      pnltitle: () => p.label + CMP_PHRASE[c],
+      pnlnote: () => AIBA.narrative(D, p).pnlNote,
+      mtitle: () => AIBA.measureById(AIBState.get('m')).label + ' by month',
+      fmtitle: () => AIBA.measureById(AIBState.get('fm')).label + ': actual and forecast',
+      ovnote: () => 'Actual' + { bp: ' against budget and the same month last year', b: ' against budget', p: ' against the same month last year', n: '' }[c] + ', USD thousands.',
+      profitnote: () => [type === 'bar' ? 'Bars are actual' : type === 'table' ? 'Actual' : 'The thicker line is actual', /b/.test(c) ? 'the line is budget' : '', /p/.test(c) ? 'the dashed line is last year' : ''].filter(Boolean).join('; ') + '.',
+      incnote: () => 'Solid lines are actual' + (/b/.test(c) ? '; dashed lines are budget' : c === 'p' ? '; dashed lines are 2025' : '') + '. Costs exclude credit impairment and tax.'
+    };
+    el.textContent = (T[el.dataset.v] || T.label)();
+  });
+
+  /* ---------- forecast page ---------- */
+  const scenarioOn = (sc) => Object.keys(sc).some((k) => sc[k]);
+  dash.draw('landing', (el) => {
+    el.replaceChildren();
+    const sc = AIBState.scenario(), ye = AIBA.yearEnd(D, sc), base = scenarioOn(sc) ? AIBA.yearEnd(D) : null;
+    const tile = (label, o, cost, baseO) => {
+      const t = el$('div', 'cc-tile');
+      const good = o.vs_budget_pct >= 0;
+      const l = el$('div', 'cc-tile-l'); l.append(el$('span', 'cc-dot ' + (good ? '' : Math.abs(o.vs_budget_pct) > 5 ? 'bad' : 'warn')), document.createTextNode(label));
+      const d = el$('div', 'cc-tile-d');
+      d.append(el$('span', good ? 'good' : 'badc', Math.abs(o.vs_budget_pct).toFixed(1) + '% ' + (cost ? (good ? 'below' : 'above') : (good ? 'above' : 'below'))), document.createTextNode(' budget of ' + money(o.budget)));
+      t.append(l, el$('div', 'cc-tile-v', money(o.fy)), d, el$('div', 'cc-tile-d', '80% range ' + money(o.lo) + ' to ' + money(o.hi)));
+      if (baseO) t.append(el$('div', 'cc-tile-d', 'Before what-if changes: ' + money(baseO.fy)));
+      return t;
+    };
+    el.append(tile('Net profit, full-year 2026', ye.net, false, base && base.net), tile('Total income, full-year 2026', ye.income, false, base && base.income), tile('Operating costs, full-year 2026', ye.opex, true, base && base.opex));
+    const q = el$('div', 'cc-tile');
+    const ql = el$('div', 'cc-tile-l'); ql.append(el$('span', 'cc-dot'), document.createTextNode('Net profit, October to December'));
+    q.append(ql, el$('div', 'cc-tile-v', money(ye.net.forecast)), el$('div', 'cc-tile-d', 'January to September actual ' + money(ye.net.ytd)), el$('div', 'cc-tile-d', 'Monthly ' + ye.net.months.map((m) => money(m.mean)).join(', ')));
+    el.append(q);
+  });
+
+  dash.draw('whatif', (el) => {
+    if (!el.__s) {
+      el.__s = AIBA.SCENARIO_KEYS.map((k, i) => {
+        const row = el$('label', 'cc-range');
+        const name = el$('span', 'cc-range-l', k.label);
+        const input = document.createElement('input'); input.type = 'range'; input.min = -20; input.max = 20; input.step = 1;
+        const out = el$('output', 'cc-range-v');
+        input.addEventListener('input', () => {
+          out.textContent = signed(+input.value, 0) + '%';
+          const v = el.__s.map((s) => s.input.value); v[i] = input.value;
+          AIBState.set({ w: v.join(',') });
+        });
+        row.append(name, input, out);
+        el.append(row);
+        return { input, out, id: k.id };
+      });
+      const reset = el$('button', 'cc-btn', 'Reset'); reset.type = 'button';
+      reset.addEventListener('click', () => AIBState.set({ w: '0,0,0,0' }));
+      el.append(reset);
+    }
+    const sc = AIBState.scenario();
+    el.__s.forEach((s) => { s.input.value = sc[s.id]; s.out.textContent = signed(sc[s.id], 0) + '%'; });
+  });
+
+  dash.draw('backtest', (el) => {
+    el.replaceChildren();
+    const m = AIBState.get('fm'), bt = AIBA.backtest(D.pnl_monthly, m, 3);
+    const first = bt.rows[0].month, last = bt.rows[bt.rows.length - 1].month;
+    el.append(el$('p', 'cc-note', 'Forecasting ' + LONGM(first) + ' to ' + LONGM(last) + ' from the six months before missed the actual ' + AIBA.measureById(m).label.toLowerCase() + ' by ' + bt.mape.toFixed(1) + '% on average; ' + bt.inside + ' of ' + bt.rows.length + ' months fell inside the 80% range.'));
+    const rows = bt.rows.map((r) => ({ cells: [AIBCharts.monthLabel(r.month), kfmt(r.actual), kfmt(r.forecast), signed(r.error_pct, 1) + '%', r.inside ? 'Yes' : 'No'] }));
+    el.append(UI.table(['Month', 'Actual', 'Forecast', 'Error', 'Inside range'], rows));
+  });
+
+  const OUT_LABEL = { breach: 'Breach', watch: 'Watch', ok: 'On track' };
+  dash.draw('outlook', (el) => {
+    el.replaceChildren();
+    const wrap = el$('div', 'cc-scroll'), t = el$('table', 'cc-table'), th = el$('thead'), hr = el$('tr'), tb = el$('tbody');
+    [['Ratio', ''], ['Latest', 'r'], ['Limit', 'r'], ['Dec 2026 forecast', 'r'], ['Outlook', ''], ['Reading', '']].forEach(([h, c]) => hr.append(el$('th', c, h)));
+    th.append(hr);
+    AIBA.ratioOutlook(D.ratios_monthly).forEach((r) => {
+      const d = r.metric === 'Net interest margin' ? 2 : 1;
+      const tr = el$('tr');
+      const chip = el$('td'); chip.append(el$('span', 'cc-chip ' + toneOf(OUT_LABEL[r.status]), OUT_LABEL[r.status]));
+      tr.append(el$('td', '', r.metric), el$('td', 'r', r.latest.toFixed(d) + '%'), el$('td', 'r', (r.kind === 'min' ? 'Min ' : 'Max ') + r.limit.toFixed(d) + '%'), el$('td', 'r', r.dec == null ? '—' : r.dec.toFixed(d) + '%'), chip, el$('td', 'cc-muted', r.text));
+      tb.append(tr);
+    });
+    t.append(th, tb); wrap.append(t); el.append(wrap);
+  });
+
+  /* ---------- AI analytics preview (sample answers from analytics.js; no AI service) ---------- */
+  dash.draw('ai', (el) => {
+    if (el.__built) return;
+    el.__built = true;
+    const form = el$('form', 'cc-ai-form');
+    const input = document.createElement('input');
+    input.type = 'text'; input.maxLength = 200; input.placeholder = 'Ask about profit, costs, income, ratios, forecasts or savings';
+    input.setAttribute('aria-label', 'Question');
+    const btn = el$('button', 'cc-btn cc-btn-primary', 'Ask'); btn.type = 'submit';
+    form.append(input, btn);
+    const chips = el$('div', 'cc-ai-chips');
+    const out = el$('div', 'cc-ai-out'); out.setAttribute('aria-live', 'polite');
+    const ask = (q) => {
+      q = q.trim(); if (!q) return;
+      const a = AIBA.askPreview(q, D, period());
+      const card = el$('div', 'cc-ai-ans');
+      const h = el$('h4', '', a.title); h.append(el$('span', 'cc-tag cc-tag-sample', 'Sample answer'));
+      const ul = el$('ul'); a.lines.forEach((l) => ul.append(el$('li', '', l)));
+      card.append(el$('p', 'cc-ai-q', q), h, ul);
+      if (a.suggestions) { const s = el$('div', 'cc-ai-chips'); a.suggestions.forEach((x) => { const b = el$('button', 'cc-ai-chip', x); b.type = 'button'; b.addEventListener('click', () => ask(x)); s.append(b); }); card.append(s); }
+      card.append(el$('p', 'cc-ai-src', a.source + ' · Preview answer written from the dashboard data, not by an AI service'));
+      out.prepend(card);
+      input.value = '';
+    };
+    AIBA.SUGGESTIONS.forEach((q) => { const b = el$('button', 'cc-ai-chip', q); b.type = 'button'; b.addEventListener('click', () => ask(q)); chips.append(b); });
+    form.addEventListener('submit', (e) => { e.preventDefault(); ask(input.value); });
+    el.append(form, chips, out);
+  });
+
+  /* ---------- react to setting changes (filters, chart controls, design switch, back button) ---------- */
+  function applyCompare() {
+    document.querySelectorAll('th[data-cmp]').forEach((th) => { th.hidden = cmp().indexOf(th.dataset.cmp) < 0; });
+  }
+  applyCompare();
+  AIBState.on((keys) => {
+    if (keys.indexOf('*') >= 0 || keys.indexOf('tab') >= 0) showTab(AIBState.get('tab'));
+    const rest = keys.filter((k) => k !== 'tab');
+    if (!rest.length) return;
+    if (rest.length === 1 && rest[0] === 'w') { dash.redraw('landing'); dash.redraw('chart-forecast'); return; }
+    applyCompare();
+    periodCalcs();
+    dash.refresh();
   });
 })();
