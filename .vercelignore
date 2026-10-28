@@ -3,3 +3,4 @@ BACKLOG.md
 .vercelignore
 tailwind.config.js
 option-2.src.css
+tests/
