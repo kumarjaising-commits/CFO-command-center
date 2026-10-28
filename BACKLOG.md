@@ -1,0 +1,13 @@
+# Backlog
+
+Author: kjaising
+
+## Open
+- [ ] Push commit `d5facbc` to GitHub and redeploy on Vercel
+- [ ] Turn on Vercel Deployment Protection (password or Vercel Authentication) before sharing the link
+- [ ] Replace placeholder `--aib-*` colours and `assets/aib-logo-white.png` with AIB's official brand kit
+- [ ] Replace sample rows in `data.js` with live AIB feeds (fetch JSON in `shim.js`); programme, gates, risks and close calendar already follow the 25 October operating plan
+
+## Done
+- [x] Remove Anthropic references from the codebase and add author metadata (`d5facbc`)
+- [x] Keep `README.md` and `BACKLOG.md` out of the Vercel deployment (`.vercelignore`); they stay on GitHub
