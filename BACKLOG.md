@@ -3,8 +3,7 @@
 Author: kjaising
 
 ## Open
-- [ ] Push the latest commits to GitHub and redeploy on Vercel, once `cfocommandcenter.vercel.app` requires a login
-- [ ] Set `SITE_PASSWORD` in Vercel, push, and confirm `cfocommandcenter.vercel.app` asks for the password (`middleware.js`)
+- [ ] Push the latest commits to GitHub and redeploy on Vercel
 - [ ] AI analytics: decide with AIB whether to build a live version and where its data may be processed; until then the page gives sample answers only
 - [ ] Replace placeholder `--aib-*` colours and `assets/aib-logo-white.png` with AIB's official brand kit
 - [ ] Replace sample rows in `data.js` with live AIB feeds (fetch JSON in `shim.js`); programme, gates, risks and close calendar already follow the 25 October operating plan
@@ -32,7 +31,7 @@ Points to settle before building:
 - [ ] Granularity: the pack has five annual years (FY2021 to FY2025) and quarters only for Q1 and Q2 of 2025 and 2026, so no monthly history. Seasonal forecasting (Holt-Winters) is not possible; the review itself advises driver-based scenarios because of three structural breaks (2021 disruption, move to Sharia-compliant reporting, one-off FY2024 gain)
 - [ ] Line structure: the pack's P&L (interest income and expense, net fees, FX, securities, ECL, G&A, extraordinary items) differs from the dashboard's lines (staff, technology, premises); G&A and fee detail are annual only
 - [ ] Use rows with `Is_Latest = Y`; carry the pack's flags into the page (Q2 2025 OCI does not reconcile, FY2024 ECL allowance printed negative, H1 2025 dividend derived, interim figures unaudited)
-- [ ] Confidentiality: these are AIB's actual figures. Agree where the CSV lives (it is not in the repo yet) and whether the GitHub repo is private before adding it; behind the site password, the data still reaches every signed-in browser
+- [ ] Confidentiality: these are AIB's actual figures. Agree where the CSV lives (it is not in the repo yet) and whether the GitHub repo is private before adding it; the site has no password, so the data reaches every browser that opens the link
 
 ## Done
 - [x] Option 2 reads the same data as Option 1; both designs share calculations in `analytics.js`

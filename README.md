@@ -10,7 +10,6 @@ Open `index.html` in a browser, or serve the folder: `python3 -m http.server 800
 ## Deploy to Vercel
 - CLI: `npm i -g vercel`, then `vercel --prod` from this folder (framework preset: Other, no build command, output directory `.`)
 - Or push the folder to a Git repo and import it at vercel.com/new
-- `middleware.js` asks for a password before Vercel serves any page. Set it as the environment variable `SITE_PASSWORD` in Vercel (Production and Preview); without it the site stays closed. Any username works.
 - The site carries `noindex` headers. It is client-confidential, so turn on Vercel Deployment Protection (password or Vercel Authentication) before sharing the link.
 
 ## Files
