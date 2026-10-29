@@ -25,11 +25,14 @@
 .cc-tag { font-size: 11px; font-weight: 400; letter-spacing: .04em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); }
 .cc-tag-sample { color: var(--color-warn); border-color: var(--color-warn); }
 .cc-tag-plan { color: var(--color-ok); border-color: var(--color-ok); }
+.cc-tag-aib { color: var(--color-fg); border-color: var(--color-fg); }
+.cc-frame { display: block; width: 100%; height: 1600px; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: transparent; }
 .cc-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); display: flex; flex-direction: column; gap: .15rem; min-width: 0; position: relative; }
 .cc-tile-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); display: flex; align-items: center; gap: .4rem; }
 .cc-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--color-ok); flex: none; }
 .cc-dot.warn { background: var(--color-warn); }
 .cc-dot.bad { background: var(--color-bad); }
+.cc-dot.na { background: var(--color-fg-muted); opacity: .45; }
 .cc-tile-v { font-family: var(--font-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.1; font-variant-numeric: tabular-nums; }
 .cc-tile-d { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
 .cc-tile-d .good { color: var(--color-ok); }

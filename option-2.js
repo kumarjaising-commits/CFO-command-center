@@ -9,6 +9,7 @@
   const ALL = A.monthsOf(D.pnl_monthly);
   const LATEST = ALL[ALL.length - 1];
   const period = () => S.period(ALL);
+  const cur = () => S.currency();
   const $ = (id) => document.getElementById(id);
   const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -114,16 +115,16 @@
   }
 
   function spark(el) {
-    const rows = D.ratios_monthly.filter((r) => r.metric === el.dataset.o2Spark && r.month <= period().endMonth).sort((a, b) => (a.month < b.month ? -1 : 1));
+    const rows = D.ratios.filter((r) => r.metric === el.dataset.o2Spark).sort((a, b) => (a.end < b.end ? -1 : 1));
     if (rows.length < 2) { el.innerHTML = ''; return; }
-    const W = Math.max(160, el.clientWidth || 220), H = 56, lim = rows[0].limit;
-    const vals = rows.map((r) => r.value).concat([lim]);
+    const W = Math.max(160, el.clientWidth || 220), H = 56, lim = rows[rows.length - 1].limit;
+    const vals = rows.map((r) => r.value).concat(lim == null ? [] : [lim]);
     const pad = (d3.max(vals) - d3.min(vals)) * 0.2 || 1;
     const y = d3.scaleLinear([d3.min(vals) - pad, d3.max(vals) + pad], [H - 4, 4]);
     const x = d3.scaleLinear([0, rows.length - 1], [2, W - 4]);
     el.innerHTML = '';
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', '0 0 ' + W + ' ' + H);
-    svg.append('line').attr('x1', 2).attr('x2', W - 4).attr('y1', y(lim)).attr('y2', y(lim)).attr('stroke', '#94A3B8').attr('stroke-dasharray', '4 3');
+    if (lim != null) svg.append('line').attr('x1', 2).attr('x2', W - 4).attr('y1', y(lim)).attr('y2', y(lim)).attr('stroke', '#94A3B8').attr('stroke-dasharray', '4 3');
     svg.append('path').attr('d', d3.line().x((_, i) => x(i)).y((r) => y(r.value))(rows)).attr('fill', 'none').attr('stroke', COL.actual).attr('stroke-width', 2).attr('stroke-linejoin', 'round');
     svg.append('circle').attr('cx', x(rows.length - 1)).attr('cy', y(rows[rows.length - 1].value)).attr('r', 3).attr('fill', COL.actual);
   }
@@ -155,29 +156,25 @@
     fill('o2-period-start', months, p.start);
     fill('o2-period-end', months, p.end);
     fill('o2-compare', [['bp', 'Budget and 2025'], ['b', 'Budget'], ['p', '2025'], ['n', 'None']], cmp());
+    fill('o2-currency', A.CURRENCIES.map((x) => [x.id, x.label]), cur());
     $('o2-period-from').classList.toggle('hidden', p.mode !== 'r');
     $('o2-period-end-label').textContent = p.mode === 'm' ? 'Month' : p.mode === 'r' ? 'To' : 'Up to';
   }
 
-  /* ---------- KPI card (same values as Option 1's tiles) ---------- */
+  /* ---------- KPI card (AIB reported; same values as Option 1's tiles) ---------- */
   function kpiCard(r0) {
-    const p = period(), r = A.kpiForPeriod(D, r0, p);
-    const up = r.direction === 'up', money = r.unit === 'USDk';
-    const met = up ? r.value >= r.target : r.value <= r.target;
-    const val = money ? A.money(r.value) : r.value.toFixed(r.id === 'nim' ? 2 : 1) + '%';
-    const tgt = money ? A.money(r.target) : r.target.toFixed(1) + '%';
-    const badge = money
-      ? '<span class="' + (met ? 'bg-brand-greenLight text-brand-green' : 'bg-brand-roseLight text-brand-rose') + ' font-bold px-2 py-0.5 rounded text-[11px] normal-case">' + sp((r.value / r.target - 1) * 100) + ' vs budget</span>'
-      : '<span class="' + (met ? 'bg-brand-greenLight text-brand-green' : 'bg-brand-roseLight text-brand-rose') + ' font-bold px-2 py-0.5 rounded text-[11px] normal-case">' + (met ? 'Within target' : 'Outside target') + '</span>';
-    let foot = 'No earlier month to compare';
+    const r = A.kpiView(D, r0, cur());
+    const badge = r.met != null
+      ? '<span class="' + (r.met ? 'bg-brand-greenLight text-brand-green' : 'bg-brand-roseLight text-brand-rose') + ' font-bold px-2 py-0.5 rounded text-[11px] normal-case">' + (r.met ? 'Above minimum' : 'Below minimum') + '</span>'
+      : '<span class="bg-navy-100 text-navy-600 font-bold px-2 py-0.5 rounded text-[11px] normal-case whitespace-nowrap">' + esc(r.status === 'Audited' ? 'Audited' : 'Unaudited') + '</span>';
+    const sub = r.target != null ? esc(r.target_label) + ' ' + r.targetText : r.ref_value != null ? esc(r.ref_label) + ': ' + r.refText : '';
+    let foot = 'No earlier figure to compare';
     if (r.prior != null) {
-      const diff = r.unit === '%' ? r.value - r.prior : (r.value / r.prior - 1) * 100;
-      const good = up ? diff >= 0 : diff <= 0;
-      foot = '<span>' + esc(r.prior_label) + '</span><strong class="' + (good ? 'text-brand-green' : 'text-brand-rose') + ' font-semibold tabular-nums">' + (r.unit === '%' ? A.signed(diff, r.id === 'nim' ? 2 : 1) + ' pp' : A.signed(diff, 1) + '%') + '</strong>';
+      foot = '<span>' + esc(r.prior_label) + '</span><strong class="' + (r.good == null ? 'text-navy-700' : r.good ? 'text-brand-green' : 'text-brand-rose') + ' font-semibold tabular-nums">' + esc(r.diffText) + '</strong>';
     }
-    return '<div class="bg-white border border-navy-200 rounded-xl p-5 card-shadow space-y-3">' +
+    return '<div class="bg-white border border-navy-200 rounded-xl p-5 card-shadow space-y-3" title="' + esc(r.note) + '">' +
       '<div class="flex items-center justify-between gap-2 text-xs font-medium text-navy-500 uppercase tracking-wider"><span>' + esc(r.label) + '</span>' + badge + '</div>' +
-      '<div class="flex items-baseline space-x-2"><span class="text-3xl font-sans font-bold text-navy-900 tabular-nums">' + val + '</span><span class="text-xs text-navy-500">' + (money ? 'Budget: ' : up ? 'Target ≥ ' : 'Target ≤ ') + tgt + '</span></div>' +
+      '<div class="flex items-baseline space-x-2"><span class="text-3xl font-sans font-bold text-navy-900 tabular-nums">' + esc(r.valueText) + '</span><span class="text-xs text-navy-500">' + sub + '</span></div>' +
       '<div class="pt-2 border-t border-navy-100 flex items-center justify-between text-xs text-navy-600">' + foot + '</div></div>';
   }
 
@@ -191,16 +188,16 @@
   const DOT = ['bg-brand-blue', 'bg-brand-amber', 'bg-brand-green'];
 
   function overview() {
-    const p = period(), n = A.narrative(D, p);
+    const p = period(), n = A.narrative(D, p, cur());
     const net = A.pnlSummary(D.pnl_monthly, p.months).find((r) => r.line === 'Net profit');
     set('o2-narrative-title', 'Executive Narrative: ' + esc(p.short) + ' Financial Trajectory &amp; Operating Model Handover');
-    set('o2-narrative', esc(p.phrase) + ', net profit is <strong class="text-navy-900 font-semibold">' + A.money(net.actual) + '</strong>, <strong class="' + (net.variance >= 0 ? 'text-brand-green' : 'text-brand-rose') + ' font-semibold">' + Math.abs(net.variance_pct).toFixed(1) + '% ' + (net.variance >= 0 ? 'above' : 'below') + '</strong> budget. ' + esc(n.pnlNote));
+    set('o2-narrative', '<strong class="text-navy-900 font-semibold">' + esc(n.reported) + '</strong> Sample monthly P&amp;L: ' + esc(p.phrase.charAt(0).toLowerCase() + p.phrase.slice(1)) + ', net profit is <strong class="text-navy-900 font-semibold">' + A.money(net.actual) + '</strong>, <strong class="' + (net.variance >= 0 ? 'text-brand-green' : 'text-brand-rose') + ' font-semibold">' + Math.abs(net.variance_pct).toFixed(1) + '% ' + (net.variance >= 0 ? 'above' : 'below') + '</strong> budget. ' + esc(n.pnlNote));
     const closed = n.gates - n.open;
     set('o2-gates-count', closed + ' of ' + n.gates + ' <span class="text-xs font-normal text-navy-500">Gates Closed</span>');
     $('o2-gates-bar').style.width = (n.gates ? (closed / n.gates) * 100 : 0) + '%';
     set('o2-gates-note', n.open + ' decision gate' + (n.open === 1 ? '' : 's') + ' pending written CEO confirmation.');
     set('o2-callouts', n.callouts.map((c, i) => '<div class="flex items-start space-x-3 bg-white p-3 rounded-lg border border-navy-100"><div class="p-1.5 ' + TONE_BOX[c.tone] + ' rounded shrink-0">' + (i === 2 ? ICON.shield : c.tone === 'ok' ? ICON.ok : ICON.warn) + '</div><div><strong class="text-navy-900 block font-semibold mb-0.5">' + esc(c.title) + '</strong><span class="text-navy-600">' + esc(c.text) + '</span></div></div>').join(''));
-    set('o2-kpis', ['net_profit_ytd', 'car', 'cost_income', 'lcr'].map((id) => kpiCard(D.kpis.find((r) => r.id === id))).join(''));
+    set('o2-kpis', ['net_profit', 'reg_capital', 'cost_income', 'liquid'].map((id) => kpiCard(D.kpis.find((r) => r.id === id))).join(''));
     const M = A.measureById(S.get('m'));
     set('o2-profit-title', esc(M.label) + " Trajectory (USD '000)");
     set('o2-profit-sub', esc(p.label) + esc(CMP_PHRASE[cmp()]) + '. Shaded months are the selected period.');
@@ -242,22 +239,18 @@
   }
 
   function balance() {
-    const p = period();
-    const car = A.kpiForPeriod(D, D.kpis.find((r) => r.id === 'car'), p);
-    const ok = car.value >= car.target;
-    $('o2-car-badge').className = (ok ? 'bg-brand-greenLight text-brand-green border-brand-green/30' : 'bg-brand-roseLight text-brand-rose border-brand-rose/30') + ' border text-xs font-semibold px-3 py-1 rounded-full';
-    set('o2-car-badge', 'Capital Adequacy at ' + esc(A.monthShort(p.endMonth)) + ': ' + (ok ? 'Above minimum' : 'Below minimum') + ' (' + car.value.toFixed(1) + '%)');
+    const rc = A.kpiView(D, D.kpis.find((r) => r.id === 'reg_capital'), cur());
+    $('o2-car-badge').className = (rc.met ? 'bg-brand-greenLight text-brand-green border-brand-green/30' : 'bg-brand-roseLight text-brand-rose border-brand-rose/30') + ' border text-xs font-semibold px-3 py-1 rounded-full';
+    set('o2-car-badge', 'Regulatory Capital at 31 Dec 2025: ' + (rc.met ? 'Above DAB minimum' : 'Below DAB minimum') + ' (' + esc(rc.valueText) + ')');
+    set('o2-bs-sub', 'AIB reported. Balance sheet at 30 June 2026 (unaudited), ' + esc(A.unitLabel(cur())));
     set('o2-bs-kpis', D.kpis.filter((r) => r.group === 'Capital and liquidity' || r.group === 'Asset quality').map(kpiCard).join(''));
-    const metrics = [...new Set(D.ratios_monthly.map((r) => r.metric))];
-    set('o2-ratios', metrics.map((m) => {
-      const rows = D.ratios_monthly.filter((r) => r.metric === m && r.month <= p.endMonth).sort((a, b) => (a.month < b.month ? -1 : 1));
-      const last = rows[rows.length - 1], d = m === 'Net interest margin' ? 2 : 1;
-      const out = last.limit_kind === 'min' ? last.value < last.limit : last.value > last.limit;
-      return '<div class="border border-navy-200 rounded-lg p-3"><div class="flex justify-between text-xs"><span class="font-semibold text-navy-700">' + esc(m) + '</span><span class="font-bold tabular-nums ' + (out ? 'text-brand-rose' : 'text-navy-900') + '">' + last.value.toFixed(d) + '%</span></div><div class="text-[11px] text-navy-500">' + (last.limit_kind === 'min' ? 'Minimum ' : 'Maximum ') + last.limit.toFixed(d) + '% (sample)</div><div data-o2-spark="' + esc(m) + '" class="mt-1"></div></div>';
+    set('o2-ratios', A.ratioWatch(D.ratios).map((w) => {
+      const d = A.ratioDp(w.latest), out = w.status === 'breach';
+      return '<div class="border border-navy-200 rounded-lg p-3"><div class="flex justify-between text-xs"><span class="font-semibold text-navy-700">' + esc(w.metric) + '</span><span class="font-bold tabular-nums ' + (out ? 'text-brand-rose' : 'text-navy-900') + '">' + w.latest.toFixed(d) + '%</span></div><div class="text-[11px] text-navy-500">' + esc(w.label) + (w.limit != null ? ' · DAB minimum ' + w.limit.toFixed(1) + '%' : '') + '</div><div data-o2-spark="' + esc(w.metric) + '" class="mt-1"></div></div>';
     }).join(''));
-    const rows = A.bsView(D.balance_sheet);
-    set('o2-bs-table', table([['Balance sheet line item'], ['30 Sep 2026', 'right'], ['31 Aug 2026', 'right'], ['31 Dec 2025', 'right'], ['Change vs Aug', 'right'], ['Change vs Dec', 'right']],
-      rows.map((r) => { const t = r.kind === 'total'; return '<tr class="' + (t ? 'bg-navy-50 font-bold text-navy-900' : 'hover:bg-navy-50') + '">' + td(esc(t ? r.line.toUpperCase() : r.line), t ? '' : 'text-navy-800') + td(k(r.sep26), 'text-right font-bold ' + (t ? 'text-brand-blue' : 'text-navy-900')) + td(k(r.aug26), 'text-right text-navy-600') + td(k(r.dec25), 'text-right text-navy-600') + td(sp(r.chg_month), 'text-right font-semibold ' + tone(r.chg_month)) + td(sp(r.chg_ytd), 'text-right font-semibold ' + tone(r.chg_ytd)) + '</tr>'; }).join('')));
+    const rows = A.bsView(D, cur());
+    set('o2-bs-table', table([['Balance sheet line item'], ['30 Jun 2026', 'right'], ['31 Mar 2026', 'right'], ['31 Dec 2025', 'right'], ['Change vs Mar', 'right'], ['Change vs Dec', 'right']],
+      rows.map((r) => { const t = r.kind === 'total'; return '<tr class="' + (t ? 'bg-navy-50 font-bold text-navy-900' : 'hover:bg-navy-50') + '">' + td(esc(t ? r.line.toUpperCase() : r.line), t ? '' : 'text-navy-800') + td(k(r.jun26), 'text-right font-bold ' + (t ? 'text-brand-blue' : 'text-navy-900')) + td(k(r.mar26), 'text-right text-navy-600') + td(k(r.dec25), 'text-right text-navy-600') + td(sp(r.chg_qtr), 'text-right font-semibold ' + tone(r.chg_qtr)) + td(sp(r.chg_ytd), 'text-right font-semibold ' + tone(r.chg_ytd)) + '</tr>'; }).join('')));
   }
 
   function budget() {
@@ -336,9 +329,9 @@
     set('o2-backtest-note', 'Forecasting ' + esc(monthName(bt.rows[0].month)) + ' to ' + esc(monthName(bt.rows[bt.rows.length - 1].month)) + ' from the six months before missed the actual ' + esc(A.measureById(m).label.toLowerCase()) + ' by <strong class="text-navy-900">' + bt.mape.toFixed(1) + '%</strong> on average; ' + bt.inside + ' of ' + bt.rows.length + ' months fell inside the 80% range.');
     set('o2-backtest', table([['Month'], ['Actual', 'right'], ['Forecast', 'right'], ['Error', 'right'], ['Inside range', 'center']],
       bt.rows.map((r) => '<tr>' + td(esc(AIBCharts.monthLabel(r.month)), 'font-semibold text-navy-900') + td(kt(r.actual), 'text-right') + td(kt(r.forecast), 'text-right text-navy-600') + td(sp(r.error_pct), 'text-right font-semibold') + td(chip(r.inside ? 'Yes' : 'No'), 'text-center') + '</tr>').join('')));
-    const LABEL = { breach: 'Breach', watch: 'Watch', ok: 'On track' };
-    set('o2-outlook', table([['Ratio'], ['Latest', 'right'], ['Limit', 'right'], ['Dec 2026 forecast', 'right'], ['Outlook', 'center'], ['Reading']],
-      A.ratioOutlook(D.ratios_monthly).map((r) => { const d = r.metric === 'Net interest margin' ? 2 : 1; return '<tr>' + td(esc(r.metric), 'font-semibold text-navy-900') + td(r.latest.toFixed(d) + '%', 'text-right font-bold') + td((r.kind === 'min' ? 'Min ' : 'Max ') + r.limit.toFixed(d) + '%', 'text-right text-navy-600') + td(r.dec == null ? '—' : r.dec.toFixed(d) + '%', 'text-right') + td(chip(LABEL[r.status]), 'text-center') + td(esc(r.text), 'text-navy-600') + '</tr>'; }).join('')));
+    const LABEL = { breach: 'Below minimum', watch: 'Watch', ok: 'Above minimum', none: 'No limit' };
+    set('o2-outlook', table([['Ratio'], ['Latest', 'right'], ['As at'], ['DAB minimum', 'right'], ['Status', 'center'], ['Reading']],
+      A.ratioWatch(D.ratios).map((r) => '<tr>' + td(esc(r.metric), 'font-semibold text-navy-900') + td(r.latest.toFixed(A.ratioDp(r.latest)) + '%', 'text-right font-bold') + td(esc(r.label), 'text-navy-600 whitespace-nowrap') + td(r.limit == null ? '—' : r.limit.toFixed(1) + '%', 'text-right text-navy-600') + td(chip(LABEL[r.status]), 'text-center') + td(esc(r.text), 'text-navy-600') + '</tr>').join('')));
   }
 
   /* ---------- AI analytics preview (sample answers from analytics.js; no AI service) ---------- */
@@ -351,7 +344,7 @@
     const out = el.querySelector('[data-o2-answers]'), input = el.querySelector('input');
     const ask = (q) => {
       q = q.trim(); if (!q) return;
-      const a = A.askPreview(q, D, period());
+      const a = A.askPreview(q, D, period(), cur());
       const card = document.createElement('div');
       card.className = 'bg-navy-50 border border-navy-200 border-l-4 border-l-brand-blue rounded-lg p-4 text-xs text-navy-700';
       card.innerHTML = '<p class="text-navy-500 mb-1"><strong>Q:</strong> ' + esc(q) + '</p><h4 class="text-sm font-semibold text-navy-900 mb-1.5 flex items-center gap-2 flex-wrap">' + esc(a.title) + '<span class="bg-brand-amberLight text-brand-amber border border-brand-amber/30 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Sample answer</span></h4><ul class="list-disc pl-4 space-y-0.5 leading-relaxed">' + a.lines.map((l) => '<li>' + esc(l) + '</li>').join('') + '</ul>' +
@@ -362,6 +355,23 @@
     el.addEventListener('submit', (e) => { e.preventDefault(); ask(input.value); });
     el.addEventListener('click', (e) => { const b = e.target.closest('[data-o2-ask]'); if (b) ask(b.dataset.o2Ask); });
   }
+
+  /* ---------- Cost & Efficiency frame (sized to its page; from disk it keeps its CSS height) ---------- */
+  function fitFrame(f) {
+    const doc = f.contentDocument; // null when opened from disk
+    if (!doc || doc.URL === 'about:blank' || f.__doc === doc) return;
+    f.__doc = doc;
+    const fit = () => requestAnimationFrame(() => {
+      const h = Math.ceil(doc.documentElement.getBoundingClientRect().height);
+      if (h > 0 && f.offsetParent && Math.abs(h - f.clientHeight) > 2) f.style.height = h + f.offsetHeight - f.clientHeight + 'px'; // plus the frame's border
+    });
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(doc.body);
+    fit();
+  }
+  document.querySelectorAll('.cc-frame').forEach((f) => {
+    f.addEventListener('load', () => fitFrame(f));
+    if (f.contentDocument && f.contentDocument.readyState === 'complete') fitFrame(f);
+  });
 
   /* ---------- render, tabs and events ---------- */
   function renderAll() {

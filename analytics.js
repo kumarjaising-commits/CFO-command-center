@@ -19,22 +19,26 @@
 
   /* ---------- formats ---------- */
   const fmtInt = (v) => Math.round(v).toLocaleString('en-US');
-  const money = (k) => {
+  const money = (k, sym) => {
+    sym = sym == null ? '$' : sym;
     const n = k * 1000, a = Math.abs(n), s = n < 0 ? '−' : '';
-    if (a >= 1e9) return s + '$' + (a / 1e9).toFixed(2) + 'bn';
-    if (a >= 1e6) return s + '$' + (a / 1e6).toFixed(1) + 'm';
-    if (a >= 1e3) return s + '$' + (a / 1e3).toFixed(0) + 'k';
-    return s + '$' + a.toFixed(0);
+    if (a >= 1e9) return s + sym + (a / 1e9).toFixed(2) + 'bn';
+    if (a >= 1e6) return s + sym + (a / 1e6).toFixed(1) + 'm';
+    if (a >= 1e3) return s + sym + (a / 1e3).toFixed(0) + 'k';
+    return s + sym + a.toFixed(0);
   };
   // No sign when the value rounds to zero, so a tiny negative never shows as "−0.0"
   const signed = (v, d) => { const a = Math.abs(v).toFixed(d); return (+a === 0 ? '' : v > 0 ? '+' : '−') + a; };
   const pct = (v, d) => (v == null || isNaN(v) ? '—' : v.toFixed(d == null ? 1 : d) + '%');
+  // Decimals for a reported ratio: small ratios (margin, loan-to-deposit) need two
+  const ratioDp = (v) => (Math.abs(v) < 10 ? 2 : 1);
+  const LONG_DAY = (d) => +d.slice(8, 10) + ' ' + LONG[+d.slice(5, 7) - 1] + ' ' + d.slice(0, 4);
 
   /* ---------- status colours (chips in both designs) ---------- */
   const TONE = {
-    ok: ['Closed', 'Complete', 'Submitted', 'Approved', 'Realised', 'Effective', 'On track', 'Done', 'Low'],
+    ok: ['Closed', 'Complete', 'Submitted', 'Approved', 'Realised', 'Effective', 'On track', 'Done', 'Low', 'Loaded', 'Above minimum'],
     warn: ['In review', 'In progress', 'Drafting', 'Validated', 'Due today', 'Identified', 'Medium', 'Open', 'In preparation', 'Watch'],
-    bad: ['Overdue', 'High', 'Late', 'Breach', 'Deficient']
+    bad: ['Overdue', 'High', 'Late', 'Breach', 'Deficient', 'Below minimum']
   };
   const toneOf = (s) => (TONE.ok.includes(s) ? 'ok' : TONE.warn.includes(s) ? 'warn' : TONE.bad.includes(s) ? 'bad' : '');
 
@@ -134,27 +138,70 @@
     return Object.values(m).sort((a, b) => (a.month < b.month ? -1 : 1));
   }
 
-  /* ---------- tables shared by both designs ---------- */
-  // KPI tiles hold the latest close. Net profit follows the period; a ratio with a monthly series shows the
-  // period's last month; a tile without a series (return on equity) stays at the latest close.
-  function kpiForPeriod(D, r, p) {
-    if (r.id === 'net_profit_ytd') {
-      const net = pnlSummary(D.pnl_monthly, p.months).find((x) => x.line === 'Net profit');
-      return { ...r, label: 'Net profit, ' + p.tile, value: net.actual, prior: net.prior, target: net.budget, prior_label: p.priorLabel };
-    }
-    if (p.isLatest) return r;
-    const rows = D.ratios_monthly.filter((x) => x.metric === r.series).sort((a, b) => (a.month < b.month ? -1 : 1));
-    if (!rows.length) return { ...r, label: r.label + ' (' + SHORT[mIdx(monthsOf(D.pnl_monthly).slice(-1)[0])] + ' close)' };
-    const i = rows.findIndex((x) => x.month === p.endMonth);
-    return { ...r, value: rows[i].value, prior: i > 0 ? rows[i - 1].value : null, prior_label: i > 0 ? 'vs ' + SHORT[mIdx(rows[i - 1].month)] : '' };
+  /* ---------- AIB reported figures (reporting pack) in AFN or USD ---------- */
+  const CURRENCIES = [{ id: 'afn', label: 'AFN' }, { id: 'usd', label: 'USD' }];
+  // One fixed rate for every period, the same as the Cost and efficiency page's default
+  const AFN_PER_USD = 65;
+  // AFN '000 into the chosen currency, still in thousands
+  const toCur = (k, cur) => (cur === 'usd' ? k / AFN_PER_USD : k);
+  const moneyCur = (k, cur) => money(k, cur === 'usd' ? '$' : 'AFN ');
+  const unitLabel = (cur) => (cur === 'usd' ? 'USD thousands at a fixed ' + AFN_PER_USD + ' AFN per USD' : 'AFN thousands');
+
+  // KPI tiles hold the latest reported figures; they do not follow the period filter, which covers the sample monthly P&L.
+  // `met` is against the DAB minimum where the pack gives one.
+  function kpiView(D, r, cur) {
+    const isMoney = r.unit === 'AFNk';
+    const conv = (v) => (isMoney && v != null ? toCur(v, cur) : v);
+    const value = conv(r.value), prior = conv(r.prior), ref = conv(r.ref_value);
+    const diff = prior == null ? null : isMoney ? (value / prior - 1) * 100 : value - prior;
+    const good = diff == null || !r.direction ? null : r.direction === 'up' ? diff >= 0 : diff <= 0;
+    const met = r.target == null ? null : r.direction === 'down' ? value <= r.target : value >= r.target;
+    const text = (v) => (v == null ? '—' : isMoney ? moneyCur(v, cur) : pct(v, ratioDp(v)));
+    return { ...r, value, prior, ref_value: ref, diff, good, met, isMoney, valueText: text(value), refText: text(ref), targetText: r.target == null ? null : pct(r.target, 1),
+      diffText: diff == null ? '' : isMoney ? signed(diff, 1) + '%' : signed(diff, ratioDp(value)) + ' pp' };
   }
 
-  const bsView = (bs) => bs.map((r) => ({
-    line: r.line, kind: r.kind, sep26: r.sep26, aug26: r.aug26, dec25: r.dec25,
-    chg_month: r.aug26 ? (r.sep26 / r.aug26 - 1) * 100 : null,
-    chg_ytd: r.dec25 ? (r.sep26 / r.dec25 - 1) * 100 : null
-  }));
+  // Statement of financial position
+  const BS_COLS = [
+    { key: 'jun26', period: 'Q2-2026', label: '30 Jun 2026' },
+    { key: 'mar26', period: 'Q1-2026', label: '31 Mar 2026' },
+    { key: 'dec25', period: 'FY2025', label: '31 Dec 2025' },
+    { key: 'dec24', period: 'FY2024', label: '31 Dec 2024' }
+  ];
+  const bsView = (D, cur) => D.balance_sheet.map((r) => {
+    const o = { line: r.line, section: r.section, kind: r.kind };
+    BS_COLS.forEach((c) => { o[c.key] = r[c.key] == null ? null : toCur(r[c.key], cur); });
+    // No % change from a zero or negative balance (the FVOCI reserve swings either side of zero)
+    const chg = (a, b) => (b > 0 && a >= 0 ? (a / b - 1) * 100 : null);
+    o.chg_qtr = chg(o.jun26, o.mar26);
+    o.chg_ytd = chg(o.jun26, o.dec25);
+    return o;
+  });
 
+  // Latest reported value of each ratio against the DAB minimum where the reporting pack gives one.
+  // Five annual points and one interim are too few, and too broken by 2021 and 2024, for a trend forecast.
+  function ratioWatch(ratios) {
+    const by = {};
+    ratios.forEach((r) => { (by[r.metric] = by[r.metric] || []).push(r); });
+    return Object.keys(by).map((metric) => {
+      const rows = by[metric].slice().sort((a, b) => (a.end < b.end ? -1 : 1));
+      const last = rows[rows.length - 1], prev = rows[rows.length - 2] || null;
+      const change = prev ? last.value - prev.value : null;
+      const move = change == null ? 'no earlier figure to compare'
+        : Math.abs(change) < 0.005 ? 'unchanged on ' + prev.label
+        : (change > 0 ? 'up ' : 'down ') + Math.abs(change).toFixed(ratioDp(last.value)) + ' pp on ' + prev.label;
+      const lim = last.limit, headroom = lim == null ? null : last.value - lim;
+      let status, text;
+      if (lim == null) { status = 'none'; text = 'No regulatory limit in the reporting pack; ' + move + '.'; }
+      else {
+        status = headroom < 0 ? 'breach' : headroom < 2 ? 'watch' : 'ok';
+        text = Math.abs(headroom).toFixed(1) + ' pp ' + (headroom < 0 ? 'below' : 'above') + ' the DAB minimum of ' + pct(lim, 1) + '; ' + move + '.';
+      }
+      return { metric, latest: last.value, label: last.label, end: last.end, audit: last.status, limit: lim, kind: last.limit_kind, headroom, change, prior_label: prev ? prev.label : null, status, text, series: rows };
+    });
+  }
+
+  /* ---------- tables shared by both designs ---------- */
   function budgetView(budget2027) {
     const rows = budget2027.map((r) => ({
       function: r.function, kind: 'line', owner: r.owner, fcst_2026: r.fcst_2026, budget_2027: r.budget_2027,
@@ -348,36 +395,6 @@
     return { rows, mape, inside: rows.filter((r) => r.inside).length };
   }
 
-  // Regulatory ratios: damped-trend forecast for 12 months and the first month the limit would be crossed.
-  function ratioOutlook(ratios, horizon) {
-    horizon = horizon || 12;
-    const by = {};
-    ratios.forEach((r) => { (by[r.metric] = by[r.metric] || []).push(r); });
-    return Object.keys(by).map((metric) => {
-      const rows = by[metric].slice().sort((a, b) => (a.month < b.month ? -1 : 1));
-      const last = rows[rows.length - 1];
-      const lim = last.limit, kind = last.limit_kind;
-      const out = (v) => (kind === 'min' ? v < lim : kind === 'max' ? v > lim : false);
-      const fc = holtForecast(rows.map((r) => r.value), horizon, 0.9);
-      const months = nextMonths(last.month, horizon);
-      const firstOut = fc.findIndex((p) => out(p.mean));
-      const firstIn = fc.findIndex((p) => !out(p.mean));
-      const now = out(last.value);
-      const dec = months.indexOf(monthKey(yr(last.month), 11));
-      const kindWord = kind === 'min' ? 'minimum' : 'maximum';
-      let status, text;
-      if (now && firstIn >= 0) { status = 'breach'; text = 'Outside the ' + kindWord + ' now; the trend brings it back inside by ' + monthShort(months[firstIn]) + '.'; }
-      else if (now) { status = 'breach'; text = 'Outside the ' + kindWord + ' now, and the trend does not bring it back inside within ' + horizon + ' months.'; }
-      else if (firstOut >= 0) { status = 'watch'; text = 'Inside the ' + kindWord + ' now; on the current trend it crosses in ' + monthShort(months[firstOut]) + ' (' + (firstOut + 1) + (firstOut ? ' months' : ' month') + ').'; }
-      else { status = 'ok'; text = 'Inside the ' + kindWord + ', with no crossing expected in the next ' + horizon + ' months.'; }
-      return {
-        metric, latest: last.value, month: last.month, limit: lim, kind,
-        dec: dec >= 0 ? fc[dec].mean : null, m12: fc[horizon - 1].mean, months_to_breach: !now && firstOut >= 0 ? firstOut + 1 : null,
-        status, text, series: rows.map((r) => ({ month: r.month, value: r.value })), forecast: fc.map((p, i) => ({ month: months[i], ...p }))
-      };
-    });
-  }
-
   /* ---------- written commentary ---------- */
   const NICE = {
     'Net interest income': 'net interest income', 'Fee and commission income': 'fee income', 'FX and trading income': 'FX and trading income',
@@ -389,12 +406,8 @@
   const andList = (a) => (a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]);
   const dirWord = (v) => (v >= 0 ? 'above' : 'below');
 
-  function ratioAt(ratios, metric, month) {
-    const r = ratios.find((x) => x.metric === metric && x.month === month);
-    return r || null;
-  }
-
-  function narrative(D, period) {
+  // `cur` is the currency for AIB's reported figures (afn or usd); the sample P&L stays in USD
+  function narrative(D, period, cur) {
     const rows = pnlSummary(D.pnl_monthly, period.months);
     const get = (n) => rows.find((r) => r.line === n);
     const net = get('Net profit'), inc = get('Total income'), opx = get('Total operating costs');
@@ -421,30 +434,28 @@
       pnlNote = cap(s) + (net.variance < 0 ? ', which is where the profit gap comes from.' : ', but ' + (favourable[0] ? NICE[favourable[0].line] : 'other lines') + ' keeps net profit above budget.');
     }
 
-    const car = ratioAt(D.ratios_monthly, 'Capital adequacy', period.endMonth);
-    const lcr = ratioAt(D.ratios_monthly, 'Liquidity coverage', period.endMonth);
-    const npl = ratioAt(D.ratios_monthly, 'NPL ratio', period.endMonth);
+    const K = (id) => kpiView(D, D.kpis.find((x) => x.id === id), cur);
+    const asAt = (k) => LONG_DAY(D.ratios.find((x) => x.metric === k.series && x.period === k.period).end);
+    const rc = K('reg_capital'), liq = K('liquid'), ldr = K('ld'), npl = K('npl'), np = K('net_profit'), ci = K('cost_income');
+    const reported = 'In ' + np.label.replace('Net profit, ', '') + ' (' + np.status.toLowerCase() + '), net profit was ' + np.valueText + ', ' + Math.abs(np.diff).toFixed(1) + '% ' + (np.diff >= 0 ? 'above ' : 'below ') + np.prior_label.replace('vs ', '') + ', and cost-to-income was ' + ci.valueText + '.';
     const nii = get('Net interest income'), fee = get('Fee and commission income');
     const worstCost = adverse.find((r) => r.grp === 'expense');
-    const outside = D.ratios_monthly.filter((r) => r.month === period.endMonth && ((r.limit_kind === 'min' && r.value < r.limit) || (r.limit_kind === 'max' && r.value > r.limit))).map((r) => r.metric);
 
     const callouts = [
       { tone: inc.variance >= 0 ? 'ok' : 'warn', title: 'Income against budget', text: 'Total income is ' + money(inc.actual) + ', ' + signed(inc.variance_pct, 1) + '% against budget; net interest income ' + signed(nii.variance_pct, 1) + '% and fee income ' + signed(fee.variance_pct, 1) + '%.' },
       worstCost
         ? { tone: 'bad', title: cap(NICE[worstCost.line]) + ' over budget', text: cap(NICE[worstCost.line]) + ' ' + (/s$/.test(NICE[worstCost.line]) ? 'are ' : 'is ') + money(-worstCost.variance) + ' (' + Math.abs(worstCost.variance_pct).toFixed(1) + '%) above budget, the largest adverse line.' }
         : { tone: 'ok', title: 'Costs within budget', text: 'Every cost line is at or below budget for this period.' },
-      car
-        ? { tone: car.value >= car.limit ? 'ok' : 'bad', title: 'Capital adequacy', text: 'Capital adequacy is ' + pct(car.value) + ' at ' + monthShort(period.endMonth) + ' against a sample minimum of ' + pct(car.limit) + ', ' + Math.round((car.value - car.limit) * 100) + ' bps of headroom.' }
-        : null
-    ].filter(Boolean);
+      { tone: rc.met ? 'ok' : 'bad', title: 'Regulatory capital', text: 'The regulatory capital ratio was ' + rc.valueText + ' at ' + asAt(rc) + ' against the DAB minimum of ' + rc.targetText + ', ' + Math.round((rc.value - rc.target) * 100) + ' bps of headroom (AIB reported, audited).' }
+    ];
 
     const commentary = [
       { title: 'Income', text: 'Total income of ' + money(inc.actual) + ' is ' + money(Math.abs(inc.variance)) + ' ' + dirWord(inc.variance) + ' budget and ' + signed(inc.yoy_pct, 1) + '% on the same period of 2025. ' + (favourable.length ? cap(NICE[favourable[0].line]) + ' is the strongest line against budget (' + signed(favourable[0].variance_pct, 1) + '%).' : '') },
       { title: 'Costs', text: 'Operating costs of ' + money(opx.actual) + ' are ' + money(Math.abs(opx.variance)) + ' ' + (opx.variance < 0 ? 'above' : 'below') + ' budget. ' + (opexOver.length ? cap(andList(opexOver)) + ' ' + (opx.variance < 0 ? 'drive the overrun.' : 'are the lines over budget.') : 'No operating cost line is over budget.') },
-      { title: 'Capital, liquidity and asset quality', text: (car && lcr ? 'Capital adequacy is ' + pct(car.value) + ' and liquidity coverage ' + pct(lcr.value, 0) + '. ' : '') + (npl ? 'The NPL ratio is ' + pct(npl.value) + ' against a sample maximum of ' + pct(npl.limit) + '. ' : '') + (outside.length ? andList(outside) + (outside.length === 1 ? ' is outside its sample limit.' : ' are outside their sample limits.') : 'All six ratios are inside their sample limits.') }
+      { title: 'Capital, liquidity and asset quality', text: 'AIB reported: the regulatory capital ratio was ' + rc.valueText + ' at ' + asAt(rc) + ', against the DAB minimum of ' + rc.targetText + '. At ' + asAt(liq) + ' liquid assets covered ' + liq.valueText + ' of customer deposits and net loans were ' + ldr.valueText + ' of deposits. Non-performing loans were ' + npl.valueText + ' of gross loans at ' + asAt(npl) + '.' }
     ];
 
-    return { headline, gatesLine, pnlNote, callouts, commentary, open, gates: pre.length };
+    return { headline, reported, gatesLine, pnlNote, callouts, commentary, open, gates: pre.length };
   }
 
   /* ---------- AI analytics preview (sample answers, no AI service) ---------- */
@@ -457,7 +468,7 @@
     'Which decisions are still open?'
   ];
 
-  function askPreview(question, D, period) {
+  function askPreview(question, D, period, cur) {
     const q = String(question || '').toLowerCase();
     const rows = pnlSummary(D.pnl_monthly, period.months);
     const get = (n) => rows.find((r) => r.line === n);
@@ -484,10 +495,10 @@
       };
     }
     if (has(/ratio|capital|car|liquid|lcr|npl|limit|breach|deposit|margin|regulat/)) {
-      const o = ratioOutlook(D.ratios_monthly);
+      const o = ratioWatch(D.ratios);
       return {
-        title: 'Regulatory ratios and limits', source: 'Sample data and sample limits · ' + monthShort(o[0].month),
-        lines: o.map((r) => r.metric + ' ' + pct(r.latest, r.metric === 'Net interest margin' ? 2 : 1) + ': ' + r.text)
+        title: 'Regulatory ratios and limits', source: 'AIB reporting pack · latest reported figures',
+        lines: o.map((r) => r.metric + ' ' + pct(r.latest, ratioDp(r.latest)) + ' (' + r.label + '): ' + r.text)
       };
     }
     if (has(/income|revenue|interest|fee|nii|trading/)) {
@@ -518,7 +529,7 @@
       const net = get('Net profit');
       return {
         title: 'Net profit', source: src,
-        lines: [period.phrase + ', net profit is ' + money(net.actual) + ', ' + Math.abs(net.variance_pct).toFixed(1) + '% ' + dirWord(net.variance_pct) + ' budget and ' + signed(net.yoy_pct, 1) + '% on the same period of 2025.', narrative(D, period).pnlNote]
+        lines: [narrative(D, period, cur).reported, 'Sample monthly P&L: ' + period.phrase.charAt(0).toLowerCase() + period.phrase.slice(1) + ', net profit is ' + money(net.actual) + ', ' + Math.abs(net.variance_pct).toFixed(1) + '% ' + dirWord(net.variance_pct) + ' budget and ' + signed(net.yoy_pct, 1) + '% on the same period of 2025.', narrative(D, period, cur).pnlNote]
       };
     }
     return {
@@ -528,9 +539,9 @@
   }
 
   return {
-    INCOME, OPEX, MEASURES, PERIOD_MODES, SCENARIO_KEYS, SUGGESTIONS,
-    money, signed, pct, fmtInt, toneOf, monthShort, monthLong, monthsOf, measureById,
-    resolvePeriod, pnlSummary, monthlyTotals, measureSeries, kpiForPeriod, bsView, budgetView, reconsView,
-    holtFit, holtForecast, measureForecast, yearEnd, backtest, ratioOutlook, narrative, askPreview
+    INCOME, OPEX, MEASURES, PERIOD_MODES, SCENARIO_KEYS, SUGGESTIONS, CURRENCIES, BS_COLS,
+    money, moneyCur, signed, pct, ratioDp, fmtInt, toneOf, monthShort, monthLong, monthsOf, measureById, unitLabel,
+    resolvePeriod, pnlSummary, monthlyTotals, measureSeries, AFN_PER_USD, toCur, kpiView, bsView, ratioWatch, budgetView, reconsView,
+    holtFit, holtForecast, measureForecast, yearEnd, backtest, narrative, askPreview
   };
 });

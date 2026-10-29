@@ -71,6 +71,10 @@
           <label for="o2-compare" class="text-navy-400 mr-2">Compare:</label>
           <select id="o2-compare" data-o2-set="c" class="bg-transparent text-white font-medium outline-none cursor-pointer"></select>
         </div>
+        <div class="flex items-center bg-navy-800 rounded-md border border-navy-700 text-xs px-2.5 py-1.5" title="AIB's reported figures (tiles, balance sheet and capital). The sample monthly P&amp;L stays in USD.">
+          <label for="o2-currency" class="text-navy-400 mr-2">Currency:</label>
+          <select id="o2-currency" data-o2-set="cur" class="bg-transparent text-white font-medium outline-none cursor-pointer"></select>
+        </div>
 
         <!-- AI Analytics link -->
         <a href="#tab-ai" data-o2-tab="ai" class="flex items-center space-x-1.5 border border-brand-blue/60 text-white hover:bg-navy-800 px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors">
@@ -129,9 +133,13 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
         <span>9. Forecast &amp; What-If</span>
       </button>
+      <button onclick="switchTab('cost')" id="tab-btn-cost" class="tab-btn py-3 px-4 text-xs font-medium text-navy-500 hover:text-navy-900 border-b-2 border-transparent flex items-center space-x-2 whitespace-nowrap transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+        <span>10. Cost &amp; Efficiency</span>
+      </button>
       <button onclick="switchTab('ai')" id="tab-btn-ai" class="tab-btn py-3 px-4 text-xs font-medium text-navy-500 hover:text-navy-900 border-b-2 border-transparent flex items-center space-x-2 whitespace-nowrap transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        <span>10. AI Analytics</span>
+        <span>11. AI Analytics</span>
       </button>
     </div>
   </nav>
@@ -142,7 +150,7 @@
   <main class="flex-1 max-w-[1700px] w-full mx-auto p-4 lg:p-8 space-y-8">
 
     <div class="bg-white border border-navy-200 border-l-4 border-l-brand-amber rounded-xl px-4 py-3 text-xs text-navy-700 card-shadow">
-      Financial figures in this option are <strong class="text-navy-900">sample data</strong> for design review, the same figures as Option 1. They are not AIB's reported results.
+      The headline tiles, Balance Sheet &amp; Capital, the ratio watch and Cost &amp; Efficiency show <strong class="text-navy-900">AIB's reported figures</strong> from its reporting pack (audited FY2021 to FY2025, unaudited interims to 30 June 2026), in AFN or USD. The monthly P&amp;L, forecast, budget, close, regulatory and savings figures are still <strong class="text-navy-900">sample data</strong> in USD, the same as Option 1.
     </div>
 
     <!-- PAGE 1: EXECUTIVE OVERVIEW -->
@@ -268,7 +276,7 @@
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-navy-200 pb-3">
         <div>
           <h2 class="text-xl font-serif font-bold text-navy-900">Statement of Financial Position & Capital Structure</h2>
-          <p class="text-xs text-navy-500">Ratios at the selected month; balance sheet as of 30 September 2026 (USD Thousands)</p>
+          <p id="o2-bs-sub" class="text-xs text-navy-500">AIB reported. Balance sheet at 30 June 2026 (unaudited), AFN thousands</p>
         </div>
         <span id="o2-car-badge"></span>
       </div>
@@ -276,7 +284,7 @@
       <div id="o2-bs-kpis" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
 
       <div class="bg-white border border-navy-200 rounded-xl p-6 card-shadow space-y-4">
-        <h3 class="text-sm font-semibold text-navy-900 uppercase tracking-wider border-b border-navy-100 pb-2">Regulatory Ratios Against Sample Limits</h3>
+        <div class="border-b border-navy-100 pb-2"><h3 class="text-sm font-semibold text-navy-900 uppercase tracking-wider">Key Ratios, FY2021 to H1 2026</h3><p class="text-xs text-navy-500">Year-ends, then H1 2026 (unaudited; profit ratios annualised). Dashed line is the DAB minimum where the reporting pack gives one.</p></div>
         <div id="o2-ratios" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
 
@@ -410,12 +418,24 @@
       </div>
 
       <div class="bg-white border border-navy-200 rounded-xl overflow-hidden card-shadow">
-        <div class="px-5 pt-4 pb-2"><h3 class="text-sm font-semibold text-navy-900 uppercase tracking-wider">Regulatory Ratio Early Warning</h3><p class="text-xs text-navy-500">Each ratio's damped trend projected 12 months ahead against its sample limit.</p></div>
+        <div class="px-5 pt-4 pb-2"><h3 class="text-sm font-semibold text-navy-900 uppercase tracking-wider">Ratio Watch · AIB Reported</h3><p class="text-xs text-navy-500">Latest reported value against the DAB minimum where the reporting pack gives one. Five annual points and one interim are too few for a trend forecast.</p></div>
         <div id="o2-outlook" class="overflow-x-auto"></div>
       </div>
     </section>
 
-    <!-- PAGE 10: AI ANALYTICS (PREVIEW) -->
+    <!-- PAGE 10: COST & EFFICIENCY -->
+    <section id="page-cost" class="page-content space-y-6 hidden">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-navy-200 pb-3">
+        <div>
+          <h2 class="text-xl font-serif font-bold text-navy-900">Cost Base &amp; Efficiency</h2>
+          <p class="text-xs text-navy-500">Income, G&amp;A costs and efficiency from FY2021 to H1 2026, from AIB's reporting pack. The page keeps its own currency switch and AFN per USD rate.</p>
+        </div>
+        <span class="bg-brand-amberLight text-brand-amber border border-brand-amber/30 text-xs font-semibold px-3 py-1 rounded-full">AIB Reported · Draft</span>
+      </div>
+      <iframe class="cc-frame block w-full border border-navy-200 rounded-xl" style="height:1600px" src="cost-efficiency.html" title="AIB cost base and efficiency" loading="lazy"></iframe>
+    </section>
+
+    <!-- PAGE 11: AI ANALYTICS (PREVIEW) -->
     <section id="page-ai" class="page-content space-y-6 hidden">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-navy-200 pb-3">
         <div>

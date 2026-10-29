@@ -6,10 +6,11 @@
  *   tab  open page          p  period mode (m, q, y, r)   e / s  end / start month (YYYY-MM)
  *   c    compare (b, p, bp, n)   m  measure on the profit chart   fm  measure on the forecast chart
  *   fc   forecast on trend charts (1)   w  what-if changes (nii,fee,opex,imp in %)   t-<chart>  chart type
+ *   cur  currency for AIB's reported figures (afn, usd)
  */
 (function () {
   'use strict';
-  var DEFAULTS = { tab: 'overview', p: 'y', e: '', s: '', c: 'bp', m: 'net', fm: 'net', fc: '0', w: '0,0,0,0' };
+  var DEFAULTS = { tab: 'overview', p: 'y', e: '', s: '', c: 'bp', m: 'net', fm: 'net', fc: '0', w: '0,0,0,0', cur: 'afn' };
   var state = parse(location.hash);
   var listeners = [];
 
@@ -52,6 +53,7 @@
       notify(['*']);
     },
     hash: function () { return '#' + serialize(state); },
+    currency: function () { return window.AIBState.get('cur') === 'usd' ? 'usd' : 'afn'; },
     on: function (fn) { listeners.push(fn); },
     // [nii, fee, opex, imp] what-if changes in %
     scenario: function () {

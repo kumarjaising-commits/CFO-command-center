@@ -4,6 +4,7 @@
   const D = window.AIB_DATA;
   const ALL = AIBA.monthsOf(D.pnl_monthly);
   const period = () => AIBState.period(ALL);
+  const cur = () => AIBState.currency();
 
   /* ---------- calculations (datasets joined or summed) ---------- */
   // Re-registered when the period changes, which clears the cached result. Sums live in analytics.js,
@@ -14,6 +15,12 @@
       title: 'P&L for the selected period',
       description: 'Sums each P&L line over the selected months and adds subtotals and variances.',
       fn: (pnl_monthly) => AIBA.pnlSummary(pnl_monthly, period().months)
+    });
+    dash.calc('bs_view', {
+      inputs: ['balance_sheet'],
+      title: 'Balance sheet with changes',
+      description: 'AIB reported balance sheet in the chosen currency, with the change against 31 March and 31 December.',
+      fn: () => AIBA.bsView(D, cur())
     });
   }
   periodCalcs();
@@ -34,13 +41,6 @@
       });
       return Object.values(m).sort((a, b) => (a.month < b.month ? -1 : 1));
     }
-  });
-
-  dash.calc('bs_view', {
-    inputs: ['balance_sheet'],
-    title: 'Balance sheet with changes',
-    description: 'Adds the change against the prior month and against the year start to each balance sheet line.',
-    fn: (balance_sheet) => AIBA.bsView(balance_sheet)
   });
 
   dash.calc('budget_view', {
@@ -223,35 +223,30 @@
     });
   });
 
-  /* ---------- KPI tiles ---------- */
+  /* ---------- KPI tiles (AIB reported figures) ---------- */
   dash.draw('kpis', (el) => {
-    if (notReady(el, ['kpis', 'ratios_monthly'])) return;
+    if (notReady(el, ['kpis', 'ratios'])) return;
     el.replaceChildren();
     const groups = el.dataset.group ? el.dataset.group.split(',') : null;
     const rows = dash.data('kpis').data.filter((r) => !groups || groups.indexOf(r.group) >= 0);
-    const rat = d3.group(dash.data('ratios_monthly').data, (d) => d.metric);
-    const p = period();
+    const rat = d3.group(dash.data('ratios').data, (d) => d.metric);
     rows.forEach((r0) => {
-      const r = AIBA.kpiForPeriod(D, r0, p);
-      const up = r.direction === 'up';
-      const met = up ? r.value >= r.target : r.value <= r.target;
-      const gap = Math.abs(r.value - r.target) / Math.abs(r.target);
-      const tone = met ? '' : gap > 0.1 ? 'bad' : 'warn';
+      const r = AIBA.kpiView(D, r0, cur());
+      const gap = r.target == null ? 0 : Math.abs(r.value - r.target) / Math.abs(r.target);
+      const tone = r.met == null ? 'na' : r.met ? '' : gap > 0.1 ? 'bad' : 'warn'; // grey where the pack gives no minimum
       const tile = el$('div', 'cc-tile');
+      tile.title = r.note + ' ' + r.status + '.';
       const l = el$('div', 'cc-tile-l'); l.append(el$('span', 'cc-dot ' + tone), document.createTextNode(r.label));
-      const v = el$('div', 'cc-tile-v', unitFmt(r.value, r.unit));
+      const v = el$('div', 'cc-tile-v', r.valueText);
       const d = el$('div', 'cc-tile-d');
       if (r.prior != null) {
-        const diff = r.unit === '%' ? r.value - r.prior : (r.value / r.prior - 1) * 100;
-        const goodMove = up ? diff >= 0 : diff <= 0;
-        const dt = el$('span', goodMove ? 'good' : 'badc', r.unit === '%' ? signed(diff, 1) + ' pp' : signed(diff, 1) + '%');
-        d.append(dt, document.createTextNode(' ' + r.prior_label));
-      } else d.textContent = 'No earlier month to compare';
-      const t = el$('div', 'cc-tile-d', (r.unit === 'USDk' ? 'Budget ' : up ? 'Target ≥ ' : 'Target ≤ ') + unitFmt(r.target, r.unit));
+        d.append(el$('span', r.good == null ? '' : r.good ? 'good' : 'badc', r.diffText), document.createTextNode(' ' + r.prior_label));
+      } else d.textContent = 'No earlier figure to compare';
+      const t = el$('div', 'cc-tile-d', r.target != null ? r.target_label + ' ' + r.targetText : r.ref_value != null ? r.ref_label + ': ' + r.refText : r.status);
       tile.append(l, v, d, t);
       const s = rat.get(r.series);
       if (s && s.length > 1) {
-        const vals = s.slice().sort((a, b) => (a.month < b.month ? -1 : 1)).filter((x) => x.month <= p.endMonth).map((x) => x.value);
+        const vals = s.slice().sort((a, b) => (a.end < b.end ? -1 : 1)).map((x) => x.value);
         const x = d3.scaleLinear([0, vals.length - 1], [2, 158]);
         const y = d3.scaleLinear(d3.extent(vals), [24, 3]);
         const svg = d3.create('svg').attr('width', '100%').attr('height', 28).attr('viewBox', '0 0 160 28').attr('preserveAspectRatio', 'none');
@@ -331,40 +326,37 @@
     AIBCharts.trend(el, cfg);
   });
 
-  /* ---------- ratio small multiples ---------- */
+  /* ---------- ratio small multiples (AIB reported, FY2021 to the latest interim) ---------- */
   dash.draw('chart-ratios', (el) => {
-    if (notReady(el, ['ratios_monthly'])) return;
+    if (notReady(el, ['ratios'])) return;
     el.replaceChildren();
-    const groups = d3.group(dash.data('ratios_monthly').data, (d) => d.metric);
-    const kindWord = { min: 'Minimum', max: 'Maximum', target: 'Target' };
     const tip = tipFor(el);
-    const cells = [];
-    groups.forEach((rows, name) => {
+    const cells = AIBA.ratioWatch(dash.data('ratios').data).map((w) => {
       const cell = el$('div');
       el.append(cell);
-      cells.push([cell, rows, name]);
+      return [cell, w];
     });
-    cells.forEach(([cell, rows, name]) => {
-      rows = rows.slice().sort((a, b) => (a.month < b.month ? -1 : 1));
-      const last = rows[rows.length - 1];
-      const lim = last.limit, kind = last.limit_kind;
-      const breach = kind === 'min' ? last.value < lim : kind === 'max' ? last.value > lim : false;
-      const t = el$('p', 'cc-mini-t'); t.append(el$('span', '', name), el$('span', '', last.value.toFixed(1) + '%'));
+    cells.forEach(([cell, w]) => {
+      const rows = w.series, last = rows[rows.length - 1], lim = w.limit, dp = AIBA.ratioDp(w.latest);
+      const breach = w.status === 'breach';
+      const t = el$('p', 'cc-mini-t'); t.append(el$('span', '', w.metric), el$('span', '', w.latest.toFixed(dp) + '%'));
       cell.append(t);
       const W = Math.max(180, cell.clientWidth || 240), H = 96;
       const svg = d3.select(cell).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
-      const vals = rows.map((r) => r.value).concat([lim]);
+      const vals = rows.map((r) => r.value).concat(lim == null ? [] : [lim]);
       const pad = (d3.max(vals) - d3.min(vals)) * 0.2 || 1;
       const y = d3.scaleLinear([d3.min(vals) - pad, d3.max(vals) + pad], [H - 16, 8]);
       const x = d3.scaleLinear([0, rows.length - 1], [4, W - 8]);
-      svg.append('line').attr('x1', 4).attr('x2', W - 8).attr('y1', y(lim)).attr('y2', y(lim)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 3');
-      svg.append('text').attr('x', 4).attr('y', y(lim) - 4).attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text(kindWord[kind] + ' ' + lim.toFixed(1) + '%');
+      if (lim != null) {
+        svg.append('line').attr('x1', 4).attr('x2', W - 8).attr('y1', y(lim)).attr('y2', y(lim)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 3');
+        svg.append('text').attr('x', 4).attr('y', y(lim) - 4).attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text('DAB minimum ' + lim.toFixed(1) + '%');
+      }
       svg.append('path').attr('d', d3.line().x((_, i) => x(i)).y((r) => y(r.value))(rows)).attr('fill', 'none').attr('stroke', dash.colors[0]).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
       svg.append('circle').attr('cx', x(rows.length - 1)).attr('cy', y(last.value)).attr('r', 3.5).attr('fill', breach ? 'var(--cds-chart-status-critical)' : dash.colors[0]);
-      svg.append('text').attr('x', 4).attr('y', H - 3).attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text(MON(pd(rows[0].month)));
-      svg.append('text').attr('x', W - 8).attr('y', H - 3).attr('text-anchor', 'end').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text(MON(pd(last.month)));
+      svg.append('text').attr('x', 4).attr('y', H - 3).attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text(rows[0].label);
+      svg.append('text').attr('x', W - 8).attr('y', H - 3).attr('text-anchor', 'end').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text(last.label);
       svg.append('g').selectAll('rect').data(rows).join('rect').attr('x', (_, i) => x(i) - (W - 12) / rows.length / 2).attr('width', (W - 12) / rows.length).attr('y', 0).attr('height', H - 12).attr('fill', 'transparent')
-        .on('mousemove', (ev, r) => tip.show(name, [{ t: MONY(pd(r.month)) + ': ' + r.value.toFixed(1) + '%' }, { t: kindWord[kind] + ': ' + lim.toFixed(1) + '%' }], ev))
+        .on('mousemove', (ev, r) => tip.show(w.metric, [{ t: r.label + ': ' + r.value.toFixed(dp) + '%' }, { t: r.status }].concat(r.limit != null ? [{ t: 'DAB minimum: ' + r.limit.toFixed(1) + '%' }] : []), ev))
         .on('mouseleave', () => tip.hide());
     });
   });
@@ -540,6 +532,9 @@
       const from = field('From', MONTH_OPTS);
       const to = field('Month', MONTH_OPTS);
       const c = field('Compare with', CMP);
+      const cu = field('Currency', AIBA.CURRENCIES.map((x) => [x.id, x.label]));
+      cu.wrap.title = "AIB's reported figures (tiles, balance sheet and capital). The sample monthly P&L stays in USD.";
+      cu.select.addEventListener('change', () => AIBState.set({ cur: cu.select.value }));
       mode.select.addEventListener('change', () => AIBState.set({ p: mode.select.value }));
       from.select.addEventListener('change', () => AIBState.set({ s: from.select.value }));
       to.select.addEventListener('change', () => AIBState.set({ e: to.select.value }));
@@ -548,14 +543,14 @@
       const ai = el$('a', 'cc-ai-link', 'AI analytics');
       ai.href = '#tab-ai';
       ai.addEventListener('click', (e) => { e.preventDefault(); showTab('ai', true); });
-      el.append(mode.wrap, from.wrap, to.wrap, c.wrap, lbl, ai);
-      el.__f = { mode, from, to, c, lbl };
+      el.append(mode.wrap, from.wrap, to.wrap, c.wrap, cu.wrap, lbl, ai);
+      el.__f = { mode, from, to, c, cu, lbl };
     }
     const f = el.__f, p = period();
-    f.mode.select.value = p.mode; f.from.select.value = p.start; f.to.select.value = p.end; f.c.select.value = cmp();
+    f.mode.select.value = p.mode; f.from.select.value = p.start; f.to.select.value = p.end; f.c.select.value = cmp(); f.cu.select.value = cur();
     f.from.wrap.hidden = p.mode !== 'r';
     f.to.label.textContent = p.mode === 'm' ? 'Month' : p.mode === 'r' ? 'To' : 'Up to';
-    f.lbl.textContent = 'Showing ' + p.label;
+    f.lbl.textContent = 'Sample P&L: ' + p.label;
   });
 
   dash.draw('tools', (el) => {
@@ -594,11 +589,10 @@
 
   /* ---------- text that follows the period ---------- */
   dash.draw('takeaway', (el) => {
-    const p = period();
-    const net = AIBA.pnlSummary(D.pnl_monthly, p.months).find((r) => r.line === 'Net profit');
-    const n = AIBA.narrative(D, p);
+    const n = AIBA.narrative(D, period(), cur());
+    const np = AIBA.kpiView(D, D.kpis.find((r) => r.id === 'net_profit'), cur());
     const b = (t) => el$('span', 'cc-n', t);
-    el.replaceChildren(p.phrase + ', net profit is ', b(money(net.actual)), ', ', b(Math.abs(net.variance_pct).toFixed(1) + '% ' + (net.variance_pct >= 0 ? 'above' : 'below')), ' budget. ',
+    el.replaceChildren('In ' + np.label.replace('Net profit, ', '') + ', AIB reported net profit of ', b(np.valueText), ', ', b(Math.abs(np.diff).toFixed(1) + '% ' + (np.diff >= 0 ? 'above' : 'below')), ' ' + np.prior_label.replace('vs ', '') + '. ',
       b(String(n.open)), ' of ', b(String(n.gates)), ' commencement decisions are still open ahead of the 10 November start.');
   });
 
@@ -609,10 +603,11 @@
     const range = p.months.length === 1 ? AIBA.monthLong(p.months[0]) : LONGM(p.months[0]) + ' to ' + AIBA.monthLong(p.endMonth);
     const T = {
       label: () => p.label,
-      kpinote: () => (p.isLatest && p.mode === 'y' ? AIBA.monthLong(p.endMonth) + ' close' : 'Net profit for ' + p.label + '; ratios at ' + AIBA.monthLong(p.endMonth) + ' close') + '. A tile turns amber when it misses its target.',
+      kpinote: () => 'AIB reported figures: H1 2026 unaudited interims; capital and asset quality from the FY2025 audited accounts. ' + (cur() === 'usd' ? 'USD at a fixed ' + AIBA.AFN_PER_USD + ' AFN per USD. ' : '') + 'These tiles do not follow the period filter.',
+      bsnote: () => "AIB reported, " + AIBA.unitLabel(cur()) + '. 31 March and 30 June 2026 are unaudited.',
       range: () => range,
       pnltitle: () => p.label + CMP_PHRASE[c],
-      pnlnote: () => AIBA.narrative(D, p).pnlNote,
+      pnlnote: () => AIBA.narrative(D, p, cur()).pnlNote,
       mtitle: () => AIBA.measureById(AIBState.get('m')).label + ' by month',
       fmtitle: () => AIBA.measureById(AIBState.get('fm')).label + ': actual and forecast',
       ovnote: () => 'Actual' + { bp: ' against budget and the same month last year', b: ' against budget', p: ' against the same month last year', n: '' }[c] + ', USD thousands.',
@@ -677,20 +672,38 @@
     el.append(UI.table(['Month', 'Actual', 'Forecast', 'Error', 'Inside range'], rows));
   });
 
-  const OUT_LABEL = { breach: 'Breach', watch: 'Watch', ok: 'On track' };
+  const WATCH_LABEL = { breach: 'Below minimum', watch: 'Watch', ok: 'Above minimum', none: 'No limit' };
   dash.draw('outlook', (el) => {
     el.replaceChildren();
     const wrap = el$('div', 'cc-scroll'), t = el$('table', 'cc-table'), th = el$('thead'), hr = el$('tr'), tb = el$('tbody');
-    [['Ratio', ''], ['Latest', 'r'], ['Limit', 'r'], ['Dec 2026 forecast', 'r'], ['Outlook', ''], ['Reading', '']].forEach(([h, c]) => hr.append(el$('th', c, h)));
+    [['Ratio', ''], ['Latest', 'r'], ['As at', ''], ['DAB minimum', 'r'], ['Status', ''], ['Reading', '']].forEach(([h, c]) => hr.append(el$('th', c, h)));
     th.append(hr);
-    AIBA.ratioOutlook(D.ratios_monthly).forEach((r) => {
-      const d = r.metric === 'Net interest margin' ? 2 : 1;
+    AIBA.ratioWatch(D.ratios).forEach((r) => {
       const tr = el$('tr');
-      const chip = el$('td'); chip.append(el$('span', 'cc-chip ' + toneOf(OUT_LABEL[r.status]), OUT_LABEL[r.status]));
-      tr.append(el$('td', '', r.metric), el$('td', 'r', r.latest.toFixed(d) + '%'), el$('td', 'r', (r.kind === 'min' ? 'Min ' : 'Max ') + r.limit.toFixed(d) + '%'), el$('td', 'r', r.dec == null ? '—' : r.dec.toFixed(d) + '%'), chip, el$('td', 'cc-muted', r.text));
+      const chip = el$('td'); chip.append(el$('span', 'cc-chip ' + toneOf(WATCH_LABEL[r.status]), WATCH_LABEL[r.status]));
+      tr.append(el$('td', '', r.metric), el$('td', 'r', r.latest.toFixed(AIBA.ratioDp(r.latest)) + '%'), el$('td', 'nw', r.label), el$('td', 'r', r.limit == null ? '—' : r.limit.toFixed(1) + '%'), chip, el$('td', 'cc-muted', r.text));
       tb.append(tr);
     });
     t.append(th, tb); wrap.append(t); el.append(wrap);
+  });
+
+  /* ---------- Cost and efficiency (the reporting-pack cost review, shown in a frame) ---------- */
+  // Sizes the frame to its page so there is one scroll bar. Opened from disk (file://) the frame
+  // cannot be measured, so it keeps its CSS height and scrolls on its own.
+  function fitFrame(f) {
+    const doc = f.contentDocument; // null when opened from disk
+    if (!doc || doc.URL === 'about:blank' || f.__doc === doc) return;
+    f.__doc = doc;
+    const fit = () => requestAnimationFrame(() => {
+      const h = Math.ceil(doc.documentElement.getBoundingClientRect().height);
+      if (h > 0 && f.offsetParent && Math.abs(h - f.clientHeight) > 2) f.style.height = h + f.offsetHeight - f.clientHeight + 'px'; // plus the frame's border
+    });
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(doc.body);
+    fit();
+  }
+  document.querySelectorAll('.cc-frame').forEach((f) => {
+    f.addEventListener('load', () => fitFrame(f));
+    if (f.contentDocument && f.contentDocument.readyState === 'complete') fitFrame(f);
   });
 
   /* ---------- AI analytics preview (sample answers from analytics.js; no AI service) ---------- */
@@ -707,7 +720,7 @@
     const out = el$('div', 'cc-ai-out'); out.setAttribute('aria-live', 'polite');
     const ask = (q) => {
       q = q.trim(); if (!q) return;
-      const a = AIBA.askPreview(q, D, period());
+      const a = AIBA.askPreview(q, D, period(), cur());
       const card = el$('div', 'cc-ai-ans');
       const h = el$('h4', '', a.title); h.append(el$('span', 'cc-tag cc-tag-sample', 'Sample answer'));
       const ul = el$('ul'); a.lines.forEach((l) => ul.append(el$('li', '', l)));

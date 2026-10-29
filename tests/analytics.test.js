@@ -15,10 +15,9 @@ test('year to date matches the figures the site already shows', () => {
   assert.equal(p.mode, 'y');
   assert.equal(p.months.length, 9);
   const net = A.pnlSummary(D.pnl_monthly, p.months).find((r) => r.line === 'Net profit');
-  const kpi = D.kpis.find((k) => k.id === 'net_profit_ytd');
-  assert.equal(net.actual, kpi.value);
-  assert.equal(net.budget, kpi.target);
-  assert.equal(net.prior, kpi.prior);
+  assert.equal(net.actual, 8503);
+  assert.equal(net.budget, 9101);
+  assert.equal(net.prior, 7377);
 });
 
 test('periods resolve to the right months and labels', () => {
@@ -90,20 +89,63 @@ test('accuracy check forecasts the last three months from the earlier six', () =
   assert.ok(isFinite(bt.mape) && bt.mape >= 0);
 });
 
-test('ratio outlook flags the sample breaches', () => {
-  const o = Object.fromEntries(A.ratioOutlook(D.ratios_monthly).map((r) => [r.metric, r]));
-  assert.equal(o['NPL ratio'].status, 'breach');
-  assert.equal(o['Cost-to-income'].status, 'breach');
-  assert.equal(o['Capital adequacy'].status, 'ok');
-  assert.equal(o['Capital adequacy'].forecast.length, 12);
+test('ratio watch reads AIB reported ratios against the DAB minimum', () => {
+  const o = Object.fromEntries(A.ratioWatch(D.ratios).map((r) => [r.metric, r]));
+  assert.equal(Object.keys(o).length, 8);
+  const rc = o['Regulatory capital ratio'];
+  assert.equal(rc.latest, 20.48);
+  assert.equal(rc.label, 'FY2025');
+  assert.equal(rc.limit, 13.5);
+  assert.equal(rc.status, 'ok');
+  assert.ok(close(rc.headroom, 6.98, 1e-9));
+  assert.equal(o['Liquid assets to deposits'].label, 'H1 2026');
+  assert.equal(o['Liquid assets to deposits'].status, 'none');
+  assert.equal(A.ratioWatch([{ metric: 'X', period: 'FY2025', label: 'FY2025', end: '2025-12-31', value: 12, limit: 13.5, limit_kind: 'min' }])[0].status, 'breach');
+  assert.equal(A.ratioWatch([{ metric: 'X', period: 'FY2025', label: 'FY2025', end: '2025-12-31', value: 14, limit: 13.5, limit_kind: 'min' }])[0].status, 'watch');
 });
 
-test('KPI tiles agree with the monthly ratios', () => {
+test('KPI tiles agree with the reported ratios', () => {
   D.kpis.filter((k) => k.series).forEach((k) => {
-    const s = D.ratios_monthly.filter((r) => r.metric === k.series).sort((a, b) => (a.month < b.month ? -1 : 1));
+    const s = D.ratios.filter((r) => r.metric === k.series).sort((a, b) => (a.end < b.end ? -1 : 1));
     assert.equal(s[s.length - 1].value, k.value, k.id + ' latest');
-    assert.equal(s[s.length - 2].value, k.prior, k.id + ' prior month');
+    assert.equal(s[s.length - 2].value, k.prior, k.id + ' prior report');
   });
+});
+
+test('reported figures match the reporting pack', () => {
+  const np = D.kpis.find((k) => k.id === 'net_profit');
+  assert.equal(np.value, 46462);
+  assert.equal(np.prior, 203859);
+  const bs = Object.fromEntries(D.balance_sheet.map((r) => [r.code, r]));
+  assert.equal(bs.BS_TA.jun26, 38215386);
+  assert.equal(bs.BS_DEPOSITS.dec25, 33750713);
+  assert.equal(bs.BS_TE.mar26, 3180136);
+});
+
+test('balance sheet foots for every date', () => {
+  const sum = (sec, k) => D.balance_sheet.filter((r) => r.section === sec && r.kind === 'line').reduce((s, r) => s + r[k], 0);
+  const bs = Object.fromEntries(D.balance_sheet.map((r) => [r.code, r]));
+  A.BS_COLS.forEach(({ key }) => {
+    // AFN 3k tolerance covers the bank's own rounding, as in the workbook's checks
+    assert.ok(close(sum('Assets', key), bs.BS_TA[key], 3), key + ' assets');
+    assert.ok(close(sum('Liabilities', key), bs.BS_TL[key], 3), key + ' liabilities');
+    assert.ok(close(sum('Equity', key), bs.BS_TE[key], 3), key + ' equity');
+    assert.ok(close(bs.BS_TL[key] + bs.BS_TE[key], bs.BS_TLE[key], 3), key + ' liabilities and equity');
+  });
+});
+
+test('USD view converts at the fixed 65 AFN per USD', () => {
+  const usd = A.bsView(D, 'usd').find((r) => r.line === 'Total assets');
+  const afn = A.bsView(D, 'afn').find((r) => r.line === 'Total assets');
+  assert.equal(afn.jun26, 38215386);
+  assert.ok(close(usd.jun26, 38215386 / 65));
+  assert.ok(close(usd.dec25, 37537401 / 65));
+  const np = A.kpiView(D, D.kpis.find((k) => k.id === 'net_profit'), 'usd');
+  assert.ok(close(np.value, 46462 / 65));
+  assert.ok(close(np.prior, 203859 / 65));
+  assert.equal(np.valueText, '$715k');
+  assert.equal(A.kpiView(D, D.kpis.find((k) => k.id === 'reg_capital'), 'usd').value, 20.48, 'ratios do not convert');
+  assert.equal(A.kpiView(D, D.kpis.find((k) => k.id === 'net_profit'), 'afn').valueText, 'AFN 46.5m');
 });
 
 test('commentary reproduces the original year-to-date wording', () => {
@@ -112,12 +154,14 @@ test('commentary reproduces the original year-to-date wording', () => {
   assert.equal(n.gatesLine, '5 of 5 commencement decisions are still open ahead of the 10 November start.');
   assert.equal(n.pnlNote, 'Technology costs and credit impairment run above budget while fee income runs below, which is where the profit gap comes from.');
   assert.equal(n.callouts.length, 3);
+  assert.equal(n.reported, 'In H1 2026 (unaudited interim), net profit was AFN 46.5m, 77.2% below H1 2025, and cost-to-income was 87.9%.');
+  assert.equal(n.callouts[2].text, 'The regulatory capital ratio was 20.5% at 31 December 2025 against the DAB minimum of 13.5%, 698 bps of headroom (AIB reported, audited).');
 });
 
 test('commentary is written for every period', () => {
   ['m', 'q', 'y', 'r'].forEach((mode) => ALL.forEach((m) => {
-    const n = A.narrative(D, A.resolvePeriod({ mode, end: m.slice(0, 7), start: '2026-01' }, ALL));
-    [n.headline, n.pnlNote, ...n.callouts.map((c) => c.text), ...n.commentary.map((c) => c.text)].forEach((s) => {
+    const n = A.narrative(D, A.resolvePeriod({ mode, end: m.slice(0, 7), start: '2026-01' }, ALL), mode === 'm' ? 'usd' : 'afn');
+    [n.headline, n.reported, n.pnlNote, ...n.callouts.map((c) => c.text), ...n.commentary.map((c) => c.text)].forEach((s) => {
       assert.ok(s && !/undefined|NaN/.test(s), mode + ' ' + m + ': ' + s);
     });
   }));
@@ -137,24 +181,10 @@ test('preview answers route by topic and never invent a service', () => {
   A.SUGGESTIONS.forEach((q) => A.askPreview(q, D, p).lines.forEach((l) => assert.ok(!/undefined|NaN/.test(l), q + ': ' + l)));
 });
 
-test('KPI tiles follow the period and keep the September values by default', () => {
-  const ytd = A.resolvePeriod({}, ALL), jun = A.resolvePeriod({ mode: 'm', end: '2026-06' }, ALL);
-  const car = D.kpis.find((k) => k.id === 'car'), roe = D.kpis.find((k) => k.id === 'roe');
-  assert.deepEqual(A.kpiForPeriod(D, car, ytd), car);
-  const j = A.kpiForPeriod(D, car, jun);
-  const rat = (m) => D.ratios_monthly.find((r) => r.metric === 'Capital adequacy' && r.month === m).value;
-  assert.equal(j.value, rat('2026-06-01'));
-  assert.equal(j.prior, rat('2026-05-01'));
-  assert.equal(A.kpiForPeriod(D, roe, jun).label, 'Return on equity, annualised (Sep close)');
-  const np = A.kpiForPeriod(D, D.kpis[0], jun);
-  assert.equal(np.label, 'Net profit, June');
-  assert.equal(np.value, A.measureSeries(D.pnl_monthly, 'net').find((r) => r.month === '2026-06-01').actual);
-});
-
 test('shared table views add the same totals both designs show', () => {
   const r = A.reconsView(D.recons_aging), tot = r[r.length - 1];
   assert.equal(tot.items_total, D.recons_aging.reduce((s, x) => s + x.items_0_30 + x.items_31_90 + x.items_91_180 + x.items_180_plus, 0));
   const b = A.budgetView(D.budget2027);
   assert.equal(b[b.length - 1].budget_2027, D.budget2027.reduce((s, x) => s + x.budget_2027, 0));
-  assert.equal(A.bsView(D.balance_sheet).length, D.balance_sheet.length);
+  assert.equal(A.bsView(D, 'afn').length, D.balance_sheet.length);
 });

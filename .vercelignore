@@ -4,3 +4,5 @@ BACKLOG.md
 tailwind.config.js
 option-2.src.css
 tests/
+scripts/
+financial_data/

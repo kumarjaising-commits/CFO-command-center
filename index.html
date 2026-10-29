@@ -30,10 +30,10 @@
 <div id="dash-root">
 <div class="cc">
   <div class="cc-head" id="top">
-    <p class="cc-takeaway" data-draw="takeaway">Year to date to September, net profit is <span class="cc-n">$8.5m</span>, <span class="cc-n">6.6% below</span> budget. <span class="cc-n">5</span> of <span class="cc-n">5</span> commencement decisions are still open ahead of the 10 November start.</p>
+    <p class="cc-takeaway" data-draw="takeaway">In H1 2026, AIB reported net profit of <span class="cc-n">AFN 46.5m</span>, <span class="cc-n">77.2% below</span> H1 2025. <span class="cc-n">5</span> of <span class="cc-n">5</span> commencement decisions are still open ahead of the 10 November start.</p>
   </div>
 
-  <div class="cc-banner">Financial figures on the Overview, P&amp;L, Forecast, Balance sheet, Budget, Close, Regulatory and Savings pages are <strong>sample data</strong> that show how the command center will read once connected to AIB's ledger and regulatory feeds. Programme dates, decision gates, risks and the close calendar come from the 25 October operating plan. Each card carries a Sample or Plan tag; the Data sources page lists what to connect.</div>
+  <div class="cc-banner">The headline tiles, the Balance sheet and capital page, the ratio watch and the Cost and efficiency page show <strong>AIB's reported figures</strong> from its reporting pack (audited FY2021 to FY2025, unaudited interims to 30 June 2026), in AFN or USD. The monthly P&amp;L, Forecast, Budget, Close, Regulatory and Savings figures are still <strong>sample data</strong>, in USD, because the pack has no monthly figures or budget. Programme dates, decision gates, risks and the close calendar come from the 25 October operating plan. Each card carries an AIB reported, Sample or Plan tag; the Data sources page lists what to connect.</div>
 
   <div class="cc-filters" data-draw="filters" aria-label="Period and comparison"></div>
 
@@ -47,14 +47,15 @@
     <button class="cc-tab" data-tab="reg" aria-selected="false">Regulatory and audit</button>
     <button class="cc-tab" data-tab="savings" aria-selected="false">Savings</button>
     <button class="cc-tab" data-tab="programme" aria-selected="false">Programme and handover</button>
+    <button class="cc-tab" data-tab="cost" aria-selected="false">Cost and efficiency</button>
     <button class="cc-tab" data-tab="sources" aria-selected="false">Data sources</button>
     <button class="cc-tab" data-tab="ai" aria-selected="false">AI analytics</button>
   </nav>
 
   <!-- OVERVIEW -->
   <section class="cc-page" id="tab-overview" data-page="overview">
-    <div class="cc-sec"><h2>Financial health</h2><span class="cc-tag cc-tag-sample">Sample data</span><p data-draw="ptext" data-v="kpinote">September 2026 close. A tile turns amber when it misses its target.</p></div>
-    <div class="cc-kpis" id="kpi-all" data-draw="kpis" data-source="kpis ratios_monthly"></div>
+    <div class="cc-sec"><h2>Financial health</h2><span class="cc-tag cc-tag-aib">AIB reported</span><p data-draw="ptext" data-v="kpinote">AIB reported figures: H1 2026 unaudited interims; capital and asset quality from the FY2025 audited accounts. These tiles do not follow the period filter.</p></div>
+    <div class="cc-kpis" id="kpi-all" data-draw="kpis" data-source="kpis ratios"></div>
 
     <div class="cc-grid-wide">
       <div class="cc-card" id="card-profit">
@@ -152,27 +153,27 @@
       <div class="cc-chart" data-draw="chart-forecast" data-source="pnl_monthly"></div>
     </div>
     <div class="cc-card">
-      <h3>Regulatory ratio early warning <span class="cc-tag cc-tag-sample">Sample limits</span></h3>
-      <p class="cc-note">Each ratio's trend, damped so it flattens over time, projected 12 months ahead against its sample limit.</p>
-      <div data-draw="outlook" data-source="ratios_monthly"></div>
+      <h3>Ratio watch <span class="cc-tag cc-tag-aib">AIB reported</span></h3>
+      <p class="cc-note">Each ratio's latest reported value against the DAB minimum where the reporting pack gives one, and its move since the previous report. Five annual points and one interim, broken by 2021 and the 2024 move to Sharia-compliant reporting, are too few for a trend forecast.</p>
+      <div data-draw="outlook" data-source="ratios"></div>
     </div>
   </section>
 
   <!-- BALANCE SHEET -->
   <section class="cc-page" id="tab-balance" data-page="balance" hidden>
-    <div class="cc-sec"><h2>Capital, liquidity and asset quality</h2><span class="cc-tag cc-tag-sample">Sample data</span><p>The ratios DAB and the Board look at first.</p></div>
-    <div class="cc-kpis" id="kpi-bs" data-draw="kpis" data-group="Capital and liquidity,Asset quality" data-source="kpis ratios_monthly"></div>
+    <div class="cc-sec"><h2>Capital, liquidity and asset quality</h2><span class="cc-tag cc-tag-aib">AIB reported</span><p>The ratios DAB and the Board look at first, from AIB's reporting pack.</p></div>
+    <div class="cc-kpis" id="kpi-bs" data-draw="kpis" data-group="Capital and liquidity,Asset quality" data-source="kpis ratios"></div>
     <div class="cc-card">
-      <h3>Six ratios over nine months</h3>
-      <p class="cc-note">Dashed line is the limit or target; a sample value is used until AIB's own limits are loaded.</p>
-      <div class="cc-multi" data-draw="chart-ratios" data-source="ratios_monthly"></div>
+      <h3>Eight ratios, FY2021 to H1 2026</h3>
+      <p class="cc-note">Year-ends FY2021 to FY2025, then H1 2026 (unaudited; profit ratios annualised, balance ratios at 30 June). The dashed line is the DAB minimum where the pack gives one. Capital and loan quality are disclosed annually; margin and return on equity need an opening balance, so start in FY2022.</p>
+      <div class="cc-multi" data-draw="chart-ratios" data-source="ratios"></div>
     </div>
     <div class="cc-card">
-      <h3>Statement of financial position</h3>
-      <p class="cc-note">USD thousands.</p>
+      <h3>Statement of financial position <span class="cc-tag cc-tag-aib">AIB reported</span></h3>
+      <p class="cc-note" data-draw="ptext" data-v="bsnote">AIB reported, AFN thousands. 31 March and 30 June 2026 are unaudited.</p>
       <div class="cc-scroll">
         <table class="cc-table" data-source="bs_view" data-row-key="line">
-          <thead><tr><th data-field="line">Line</th><th class="r" data-field="sep26" data-fmt="k">30 Sep 2026</th><th class="r" data-field="aug26" data-fmt="k">31 Aug 2026</th><th class="r" data-field="dec25" data-fmt="k">31 Dec 2025</th><th class="r" data-field="chg_month" data-fmt="dpct">Change vs Aug</th><th class="r" data-field="chg_ytd" data-fmt="dpct">Change vs Dec</th></tr></thead>
+          <thead><tr><th data-field="line">Line</th><th class="r" data-field="jun26" data-fmt="k">30 Jun 2026</th><th class="r" data-field="mar26" data-fmt="k">31 Mar 2026</th><th class="r" data-field="dec25" data-fmt="k">31 Dec 2025</th><th class="r" data-field="chg_qtr" data-fmt="dpct">Change vs Mar</th><th class="r" data-field="chg_ytd" data-fmt="dpct">Change vs Dec</th></tr></thead>
           <tbody data-draw="tbl"></tbody>
         </table>
       </div>
@@ -401,12 +402,18 @@
     </div>
   </section>
 
+  <!-- COST AND EFFICIENCY -->
+  <section class="cc-page" id="tab-cost" data-page="cost" hidden>
+    <div class="cc-sec"><h2>Cost base and efficiency</h2><span class="cc-tag cc-tag-aib">AIB reported</span><span class="cc-tag cc-tag-sample">Draft</span><p>Income, G&amp;A costs and efficiency from FY2021 to H1 2026, from AIB's reporting pack. This page keeps its own currency switch and AFN per USD rate.</p></div>
+    <iframe class="cc-frame" src="cost-efficiency.html" title="AIB cost base and efficiency" loading="lazy"></iframe>
+  </section>
+
   <!-- DATA SOURCES -->
   <section class="cc-page" id="tab-sources" data-page="sources" hidden>
     <div class="cc-sec"><h2>Where each number will come from</h2><span class="cc-tag cc-tag-plan">Plan</span><p>The connection plan for turning sample data into live data.</p></div>
     <div class="cc-card">
       <h3>Feed map</h3>
-      <p class="cc-note">Sample means the page shows illustrative rows. Plan documents means the rows come from the 25 October operating plan. To connect means a feed from an AIB system is still to be agreed with AIB Finance and IT, using AIB systems and storage only.</p>
+      <p class="cc-note">Loaded means the page shows AIB's reported figures from its reporting pack. Sample means the page shows illustrative rows. Plan documents means the rows come from the 25 October operating plan. To connect means a feed from an AIB system is still to be agreed with AIB Finance and IT, using AIB systems and storage only.</p>
       <div class="cc-scroll">
         <table class="cc-table" data-source="data_feeds" data-row-key="area">
           <thead><tr><th data-field="area">Area</th><th data-field="views">Shown on</th><th data-field="target_source">Target source</th><th data-field="cadence">Refresh</th><th data-field="owner">Owner</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
@@ -421,7 +428,7 @@
 <footer class="foot">
   <div class="foot-in">
     <img src="assets/aib-logo-white.png" alt="Afghanistan International Bank" width="62" height="22">
-    <span><strong>Aspiro Management Consultants</strong> &middot; Interim Financial Support &middot; Prototype with sample data, not AIB financial results.</span>
+    <span><strong>Aspiro Management Consultants</strong> &middot; Interim Financial Support &middot; Prototype. Pages tagged AIB reported come from AIB's reporting pack; all other financial figures are sample data.</span>
   </div>
 </footer>
 <script src="vendor/d3.min.js"></script>
