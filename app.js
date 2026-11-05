@@ -461,10 +461,7 @@
       to.select.addEventListener('change', () => AIBState.set({ e: to.select.value }));
       c.select.addEventListener('change', () => AIBState.set({ c: c.select.value }));
       const lbl = el$('p', 'cc-filters-l');
-      const ai = el$('a', 'cc-ai-link', 'AI analytics');
-      ai.href = '#tab-ai';
-      ai.addEventListener('click', (e) => { e.preventDefault(); showTab('ai', true); });
-      el.append(mode.wrap, from.wrap, to.wrap, c.wrap, cu.wrap, lbl, ai);
+      el.append(mode.wrap, from.wrap, to.wrap, c.wrap, cu.wrap, lbl);
       el.__f = { mode, from, to, c, cu, lbl };
     }
     const f = el.__f, p = period();

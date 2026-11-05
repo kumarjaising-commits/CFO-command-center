@@ -28,7 +28,7 @@ Open `index.html` in a browser, or serve the folder: `python3 -m http.server 800
 `node --test tests/*.test.js` checks the shared calculations, including that the defaults match the figures shown before the analytics features were added. Tests are not deployed.
 
 ## AI analytics
-The AI analytics page is a preview: answers come from fixed rules over the sample data in `analytics.js` (`askPreview`), and nothing is sent to an AI service.
+The AI analytics page is a preview: answers come from fixed rules over the sample data in `analytics.js` (`askPreview`), and nothing is sent to an AI service. Hidden for now: the tab, its page and the AI analytics button in the filter bar are removed from `index.html` and `app.js`; the preview code is kept.
 
 ## AIB reported figures
 Source: `financial_data/AIB_Financials_2021-H1_2026 (1).xlsx`, kept out of the repo; ask kjaising for a copy (audited FY2021 to FY2025, unaudited interims to 30 June 2026), rows with `Is_Latest = Y`. To reload after the workbook changes:

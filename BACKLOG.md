@@ -4,7 +4,7 @@ Author: kjaising
 
 ## Open
 - [ ] Push the latest commits to GitHub and redeploy on Vercel
-- [ ] AI analytics: decide with AIB whether to build a live version and where its data may be processed; until then the page gives sample answers only
+- [ ] AI analytics: hidden for now (tab, page and filter-bar button removed; preview code kept). Decide with AIB whether to bring it back as a live version and where its data may be processed
 - [ ] Replace placeholder `--aib-*` colours and `assets/aib-logo-white.png` with AIB's official brand kit
 - [ ] Replace the remaining sample rows in `data.js` (monthly P&L, budget, close, regulatory) with live AIB feeds (fetch JSON in `shim.js`); balance sheet, ratios and headline tiles already come from the reporting pack, and programme, gates, risks and close calendar from the operating plan and November CEO briefing
 - [ ] Replace each TBD date (gates, milestones, close calendar, DAB returns, audit points, budget submissions, minimum term) as AIB confirms it
