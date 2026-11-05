@@ -464,7 +464,6 @@
     'Which costs are over budget?',
     'Are any ratios close to their limits?',
     'How is income tracking against budget?',
-    'What is in the savings pipeline?',
     'Which decisions are still open?'
   ];
 
@@ -509,20 +508,12 @@
           .concat(INCOME.map((n) => { const r = get(n); return n + ': ' + money(r.actual) + ' (' + signed(r.variance_pct, 1) + '% vs budget).'; }))
       };
     }
-    if (has(/saving|discovery|pipeline/)) {
-      const sp = D.savings_pipeline, tot = sp.reduce((s, r) => s + r.annual_saving, 0);
-      const by = {}; sp.forEach((r) => { by[r.status] = (by[r.status] || 0) + r.annual_saving; });
-      return {
-        title: 'Savings pipeline', source: 'Sample data · Discovery pipeline',
-        lines: ['The pipeline holds ' + sp.length + ' options worth ' + money(tot) + ' a year.'].concat(Object.keys(by).map((k) => k + ': ' + money(by[k]) + '.'))
-      };
-    }
     if (has(/decision|gate|commence|risk|open|block/)) {
       const pre = D.gates.filter((g) => g.category === 'Pre-commencement' && g.status !== 'Closed');
       const high = D.risks.filter((r) => r.rating === 'High');
       return {
-        title: 'Open decisions and risks', source: 'Operating plan, 25 October',
-        lines: [pre.length + ' commencement decisions are open, all needed by 9 November.'].concat(pre.map((g) => g.gate + ' (' + g.owner + ').'), [high.length + ' delivery risks are rated high.'])
+        title: 'Open decisions and risks', source: 'Operating plan and November CEO briefing',
+        lines: [pre.length + ' commencement decisions are open; their dates are to be confirmed.'].concat(pre.map((g) => g.gate + ' (' + g.owner + ').'), [high.length + ' delivery risks are rated high.'])
       };
     }
     if (has(/profit|net|bottom|earn|result|perform/)) {
@@ -534,7 +525,7 @@
     }
     return {
       title: 'Try one of these questions', source: 'Preview',
-      lines: ['This preview answers a fixed set of questions about profit, costs, income, ratios, forecasts, savings and open decisions.'], suggestions: SUGGESTIONS
+      lines: ['This preview answers a fixed set of questions about profit, costs, income, ratios, forecasts and open decisions.'], suggestions: SUGGESTIONS
     };
   }
 

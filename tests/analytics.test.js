@@ -174,7 +174,7 @@ test('preview answers route by topic and never invent a service', () => {
   assert.equal(t('Which costs are over budget?'), 'Costs against budget');
   assert.equal(t('Are any ratios close to their limits?'), 'Regulatory ratios and limits');
   assert.equal(t('How is income tracking?'), 'Income against budget');
-  assert.equal(t('savings'), 'Savings pipeline');
+  assert.equal(t('savings'), 'Try one of these questions');
   assert.equal(t('open decisions'), 'Open decisions and risks');
   assert.equal(t('net profit'), 'Net profit');
   assert.equal(t('hello'), 'Try one of these questions');

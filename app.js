@@ -57,26 +57,13 @@
     fn: (recons_aging) => AIBA.reconsView(recons_aging)
   });
 
-  dash.calc('savings_view', {
-    inputs: ['savings_pipeline', 'budget2027'],
-    title: 'Savings by function',
-    description: 'Totals the saving pipeline per function and divides by the function 2026 operating cost forecast.',
-    fn: (savings_pipeline, budget2027) => {
-      const cost = {};
-      budget2027.forEach((b) => { cost[b.function] = b.fcst_2026; });
-      const by = {};
-      savings_pipeline.forEach((s) => {
-        const o = by[s.function] || (by[s.function] = { function: s.function, kind: 'line', items: 0, annual_saving: 0, one_off_cost: 0 });
-        o.items += 1; o.annual_saving += s.annual_saving; o.one_off_cost += s.one_off_cost;
-      });
-      const rows = Object.values(by).map((o) => ({ ...o, pct_of_cost: cost[o.function] ? (o.annual_saving / cost[o.function]) * 100 : null }));
-      rows.sort((a, b) => b.annual_saving - a.annual_saving);
-      const sv = rows.reduce((s, r) => s + r.annual_saving, 0);
-      const oc = rows.reduce((s, r) => s + r.one_off_cost, 0);
-      const it = rows.reduce((s, r) => s + r.items, 0);
-      const fc = budget2027.reduce((s, b) => s + b.fcst_2026, 0);
-      rows.push({ function: 'Total', kind: 'total', items: it, annual_saving: sv, one_off_cost: oc, pct_of_cost: fc ? (sv / fc) * 100 : null });
-      return rows;
+  dash.calc('programme_view', {
+    inputs: ['programme_ms'],
+    title: 'Programme milestones with dates',
+    description: 'Writes each milestone date as one day or a range; dates not yet confirmed show TBD.',
+    fn: (programme_ms) => {
+      const f = d3.utcFormat('%-d %b %Y'), d = (x) => f(new Date(x + 'T00:00:00Z'));
+      return programme_ms.map((r) => ({ ...r, dates: r.start === 'TBD' ? 'TBD' : r.start === r.end ? d(r.start) : d(r.start) + ' to ' + d(r.end) }));
     }
   });
 
@@ -91,8 +78,6 @@
   };
   const signed = (v, d) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
   const DATE = d3.utcFormat('%-d %b %Y');
-  const MON = d3.utcFormat('%b');
-  const MONY = d3.utcFormat('%b %Y');
   const pd = (s) => new Date(s + 'T00:00:00Z');
   const unitFmt = (v, u) => (v == null || isNaN(v) ? '—' : u === 'USDk' ? money(v) : u === '%' ? v.toFixed(1) + '%' : u === 'x' ? v.toFixed(2) + '×' : fmtInt(v));
 
@@ -187,7 +172,7 @@
       case 'dpct': td.textContent = signed(v, 1) + '%'; td.classList.add('r'); break;
       case 'pct': td.textContent = v.toFixed(1) + '%'; td.classList.add('r'); break;
       case 'int': td.textContent = fmtInt(v); td.classList.add('r'); break;
-      case 'date': td.textContent = DATE(pd(v)); td.classList.add('nw'); break;
+      case 'date': if (v === 'TBD') { td.textContent = v; td.classList.add('nw', 'cc-muted'); break; } td.textContent = DATE(pd(v)); td.classList.add('nw'); break;
       case 'wk': td.textContent = 'Week ' + v; td.classList.add('nw'); break;
       case 'chip': { const c = el$('span', 'cc-chip ' + toneOf(v), v); td.append(c); break; }
       case 'bar': {
@@ -426,70 +411,6 @@
     });
   });
 
-  const STAGES = ['Realised', 'Approved', 'Validated', 'Identified'];
-  dash.draw('chart-savings', (el) => {
-    if (notReady(el, ['savings_pipeline'])) return;
-    const by = d3.rollup(dash.data('savings_pipeline').data, (v) => { const o = { total: 0 }; STAGES.forEach((s) => { o[s] = d3.sum(v.filter((x) => x.status === s), (x) => x.annual_saving); }); o.total = d3.sum(v, (x) => x.annual_saving); return o; }, (d) => d.function);
-    const rows = [...by].map(([f, o]) => ({ label: f, ...o })).sort((a, b) => b.total - a.total);
-    hBars(el, {
-      rows, rowH: 32, max: d3.max(rows, (r) => r.total),
-      legend: STAGES.map((s, i) => ({ label: s, color: dash.colors[i] })),
-      endLabel: (r) => money(r.total),
-      draw: (g, r, x) => {
-        let acc = 0;
-        STAGES.forEach((s, i) => {
-          const w = x(acc + r[s]) - x(acc);
-          if (r[s] > 0) g.append('rect').attr('x', x(acc)).attr('y', 7).attr('height', 16).attr('width', Math.max(0, w)).attr('fill', dash.colors[i]);
-          acc += r[s];
-        });
-        g.append('text').attr('x', x(r.total) + 6).attr('y', 19).attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text(money(r.total));
-      },
-      tip: (r) => STAGES.map((s, i) => ({ c: dash.colors[i], t: s + ': ' + fmtInt(r[s]) + 'k' }))
-    });
-  });
-
-  /* ---------- programme timeline ---------- */
-  dash.draw('chart-timeline', (el) => {
-    if (notReady(el, ['programme_ms'])) return;
-    el.replaceChildren();
-    const rows = dash.data('programme_ms').data.map((r) => ({ ...r, s: pd(r.start), e: pd(r.end) }));
-    const wsNames = [...new Set(rows.map((r) => r.workstream))];
-    el.append(legend(wsNames.map((n, i) => ({ label: n, color: dash.colors[i] }))));
-    const W = Math.max(300, el.clientWidth || 700);
-    const stacked = W < 620;
-    const rowH = stacked ? 40 : 28;
-    const H = rows.length * rowH + 34;
-    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
-    const lw = stacked ? 0 : Math.min(W * 0.4, Math.ceil(measure(svg, rows.map((r) => r.milestone), 12)) + 8);
-    const x = d3.scaleUtc([new Date(Date.UTC(2026, 9, 20)), new Date(Date.UTC(2027, 4, 10))], [lw + (stacked ? 4 : 8), W - 12]);
-    const ticks = d3.utcMonth.every(W < 480 ? 2 : 1).range(new Date(Date.UTC(2026, 10, 1)), new Date(Date.UTC(2027, 4, 2)));
-    svg.append('g').selectAll('line').data(ticks).join('line').attr('x1', x).attr('x2', x).attr('y1', 18).attr('y2', H).attr('stroke', 'var(--cds-chart-grid)');
-    svg.append('g').selectAll('text').data(ticks).join('text').attr('x', x).attr('y', 12).attr('text-anchor', 'middle').attr('font-size', 11).attr('fill', 'var(--color-fg-muted)').text((d) => MON(d) + (d.getUTCMonth() === 0 ? ' ' + d.getUTCFullYear() : ''));
-    const trunc = (s, maxW) => { const t = svg.append('text').attr('font-size', 12).attr('opacity', 0); let out = s; t.text(out); while (t.node().getComputedTextLength() > maxW && out.length > 4) { out = out.slice(0, -2); t.text(out + '…'); } t.remove(); return out === s ? s : out + '…'; };
-    const tip = tipFor(el);
-    rows.forEach((r, i) => {
-      const g = svg.append('g').attr('transform', `translate(0,${22 + i * rowH})`);
-      const ci = wsNames.indexOf(r.workstream);
-      const by = stacked ? 22 : rowH / 2 - 6;
-      g.append('text').attr('x', 0).attr('y', stacked ? 12 : rowH / 2 + 3).attr('font-size', 12).attr('fill', 'var(--color-fg)').text(trunc(r.milestone, stacked ? W - 4 : lw - 6));
-      const op = r.basis === 'Plan' ? 1 : 0.5;
-      if (r.start === r.end) {
-        g.append('rect').attr('x', x(r.s) - 6).attr('y', by).attr('width', 12).attr('height', 12).attr('transform', `rotate(45 ${x(r.s)} ${by + 6})`).attr('fill', dash.colors[ci]).attr('fill-opacity', op);
-      } else {
-        g.append('rect').attr('x', x(r.s)).attr('y', by).attr('width', Math.max(4, x(r.e) - x(r.s))).attr('height', 12).attr('rx', 3).attr('fill', dash.colors[ci]).attr('fill-opacity', op);
-      }
-      g.append('rect').attr('x', 0).attr('width', W).attr('y', 0).attr('height', rowH).attr('fill', 'transparent')
-        .on('mousemove', (ev) => tip.show(r.milestone, [{ t: r.start === r.end ? DATE(r.s) : DATE(r.s) + ' to ' + DATE(r.e) }, { t: r.workstream + ' · ' + r.owner }, { t: r.basis === 'Plan' ? 'Date in the operating plan' : 'Indicative date' }], ev))
-        .on('mouseleave', () => tip.hide());
-    });
-    const now = new Date();
-    const dom = x.domain();
-    if (now >= dom[0] && now <= dom[1]) {
-      svg.append('line').attr('x1', x(now)).attr('x2', x(now)).attr('y1', 16).attr('y2', H).attr('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '3 3');
-      svg.append('text').attr('x', x(now) + 4).attr('y', H - 4).attr('font-size', 11).attr('fill', 'var(--cds-chart-status-critical)').text('Today');
-    }
-  });
-
   /* ---------- scorecard ---------- */
   dash.draw('scorecard', (el) => {
     if (notReady(el, ['value_scorecard'])) return;
@@ -712,7 +633,7 @@
     el.__built = true;
     const form = el$('form', 'cc-ai-form');
     const input = document.createElement('input');
-    input.type = 'text'; input.maxLength = 200; input.placeholder = 'Ask about profit, costs, income, ratios, forecasts or savings';
+    input.type = 'text'; input.maxLength = 200; input.placeholder = 'Ask about profit, costs, income, ratios, forecasts or open decisions';
     input.setAttribute('aria-label', 'Question');
     const btn = el$('button', 'cc-btn cc-btn-primary', 'Ask'); btn.type = 'submit';
     form.append(input, btn);

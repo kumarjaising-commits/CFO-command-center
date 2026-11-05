@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AIB CFO command center</title>
+<title>AIB interim CFO office</title>
 <meta name="author" content="kjaising">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#1a0830">
@@ -17,14 +17,10 @@
     <img class="brand-logo" src="assets/aib-logo-white.png" alt="Afghanistan International Bank" width="154" height="55">
     <div class="brand-rule" aria-hidden="true"></div>
     <div class="brand-title">
-      <p class="brand-eyebrow">Finance &middot; Interim operating model</p>
-      <h1 class="brand-h1">CFO command center</h1>
+      <p class="brand-eyebrow">Finance &middot; Interim CFO office</p>
+      <h1 class="brand-h1">Programme dashboard</h1>
     </div>
-    <nav class="opt-switch" aria-label="Design options">
-      <a href="index.html" data-opt-link aria-current="page">Option 1</a>
-      <a href="option-2.html" data-opt-link>Option 2</a>
-    </nav>
-    <p class="brand-meta"><strong>Prototype for review</strong><br>Prepared by Aspiro Management Consultants<br>Private and confidential</p>
+    <p class="brand-meta">Prepared by Aspiro Management Consultants<br>Private and confidential</p>
   </div>
 </header>
 <div id="dash-root">
@@ -33,7 +29,7 @@
     <p class="cc-takeaway" data-draw="takeaway">In H1 2026, AIB reported net profit of <span class="cc-n">AFN 46.5m</span>, <span class="cc-n">77.2% below</span> H1 2025. <span class="cc-n">5</span> of <span class="cc-n">5</span> commencement decisions are still open ahead of the 10 November start.</p>
   </div>
 
-  <div class="cc-banner">The headline tiles, the Balance sheet and capital page, the ratio watch and the Cost and efficiency page show <strong>AIB's reported figures</strong> from its reporting pack (audited FY2021 to FY2025, unaudited interims to 30 June 2026), in AFN or USD. The monthly P&amp;L, Forecast, Budget, Close, Regulatory and Savings figures are still <strong>sample data</strong>, in USD, because the pack has no monthly figures or budget. Programme dates, decision gates, risks and the close calendar come from the 25 October operating plan. Each card carries an AIB reported, Sample or Plan tag; the Data sources page lists what to connect.</div>
+  <div class="cc-banner">The headline tiles, the Balance sheet and capital page, and the ratio watch show <strong>AIB's reported figures</strong> from its reporting pack (audited FY2021 to FY2025, unaudited interims to 30 June 2026), in AFN or USD. The monthly P&amp;L, Forecast, Budget, Close and Regulatory figures are still <strong>sample data</strong>, in USD, because the pack has no monthly figures or budget. Milestones, decision gates, risks and the close calendar come from the operating plan and the November CEO briefing. William is in Kabul 10 to 17 November and Nipun starts on 11 November; every other date is TBD until AIB confirms it. Each card carries an AIB reported, Sample or Plan tag; the Data sources page lists what to connect.</div>
 
   <div class="cc-filters" data-draw="filters" aria-label="Period and comparison"></div>
 
@@ -45,9 +41,7 @@
     <button class="cc-tab" data-tab="budget" aria-selected="false">2027 budget</button>
     <button class="cc-tab" data-tab="close" aria-selected="false">Close and controls</button>
     <button class="cc-tab" data-tab="reg" aria-selected="false">Regulatory and audit</button>
-    <button class="cc-tab" data-tab="savings" aria-selected="false">Savings</button>
     <button class="cc-tab" data-tab="programme" aria-selected="false">Programme and handover</button>
-    <button class="cc-tab" data-tab="cost" aria-selected="false">Cost and efficiency</button>
     <button class="cc-tab" data-tab="sources" aria-selected="false">Data sources</button>
     <button class="cc-tab" data-tab="ai" aria-selected="false">AI analytics</button>
   </nav>
@@ -76,21 +70,14 @@
       </div>
     </div>
 
-    <div class="cc-grid-wide">
-      <div class="cc-card" id="card-risks">
-        <h3>Principal delivery risks <span class="cc-tag cc-tag-plan">Plan</span></h3>
-        <p class="cc-note">Initial ratings from the CEO briefing risk register; re-rated after the first two-week health check.</p>
-        <div class="cc-scroll">
-          <table class="cc-table" data-source="risks" data-row-key="id">
-            <thead><tr><th data-field="risk">Risk</th><th data-field="rating" data-fmt="chip">Rating</th><th data-field="owner">Owner</th></tr></thead>
-            <tbody data-draw="tbl"></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="cc-card" id="card-savings-ov">
-        <h3>Discovery savings pipeline <span class="cc-tag cc-tag-sample">Sample</span></h3>
-        <p class="cc-note">Annual run-rate saving by function and stage, USD thousands. The Discovery starts 1 November, so this shows the shape the pipeline will take.</p>
-        <div class="cc-chart" data-draw="chart-savings" data-source="savings_pipeline"></div>
+    <div class="cc-card" id="card-risks">
+      <h3>Principal delivery risks <span class="cc-tag cc-tag-plan">Plan</span></h3>
+      <p class="cc-note">Initial ratings from the CEO briefing risk register; re-rated after the first two-week health check.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="risks" data-row-key="id">
+          <thead><tr><th data-field="risk">Risk</th><th data-field="rating" data-fmt="chip">Rating</th><th data-field="owner">Owner</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
       </div>
     </div>
 
@@ -204,8 +191,8 @@
   <section class="cc-page" id="tab-close" data-page="close" hidden>
     <div class="cc-sec"><h2>Month-end close and balance control</h2><span class="cc-tag cc-tag-plan">Plan</span><span class="cc-tag cc-tag-sample">Sample balances</span><p>AIB working days run Saturday to Thursday.</p></div>
     <div class="cc-card">
-      <h3>November close calendar</h3>
-      <p class="cc-note">The plan's close template mapped to AIB working days, with Friday as the rest day. DAB deadlines take priority and the template is reconfirmed in week one.</p>
+      <h3>Month-end close calendar</h3>
+      <p class="cc-note">The plan's close template mapped to AIB working days, with Friday as the rest day. DAB deadlines take priority. Dates are TBD until the template is reconfirmed with AIB in week one.</p>
       <div class="cc-scroll">
         <table class="cc-table" data-source="close_calendar" data-row-key="wd">
           <thead><tr><th data-field="wd">Day</th><th data-field="due_date" data-fmt="date">Date</th><th data-field="activity">Activity</th><th data-field="owner">Owner</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
@@ -262,45 +249,31 @@
     </div>
   </section>
 
-  <!-- SAVINGS -->
-  <section class="cc-page" id="tab-savings" data-page="savings" hidden>
-    <div class="cc-sec"><h2>Discovery and savings</h2><span class="cc-tag cc-tag-sample">Sample data</span><p>The Discovery runs six weeks from 1 November. Finance tracks each saving into the budget.</p></div>
-    <div class="cc-grid-wide">
-      <div class="cc-card">
-        <h3>Annual saving by function and stage</h3>
-        <p class="cc-note">USD thousands.</p>
-        <div class="cc-chart" data-draw="chart-savings" data-source="savings_pipeline"></div>
-      </div>
-      <div class="cc-card">
-        <h3>Saving as a share of function cost</h3>
-        <p class="cc-note">Against the 2026 operating cost forecast.</p>
-        <div class="cc-scroll">
-          <table class="cc-table" data-source="savings_view" data-row-key="function">
-            <thead><tr><th data-field="function">Function</th><th class="r" data-field="items" data-fmt="int">Items</th><th class="r" data-field="annual_saving" data-fmt="k">Annual saving</th><th class="r" data-field="one_off_cost" data-fmt="k">One-off cost</th><th class="r" data-field="pct_of_cost" data-fmt="pct">Of 2026 cost</th></tr></thead>
-            <tbody data-draw="tbl"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+  <!-- PROGRAMME -->
+  <section class="cc-page" id="tab-programme" data-page="programme" hidden>
+    <div class="cc-sec"><h2>Interim programme and handover</h2><span class="cc-tag cc-tag-plan">Plan</span><p>Minimum term TBD, then monthly until the permanent CFO is onboarded or written notice is issued.</p></div>
     <div class="cc-card">
-      <h3>Savings register</h3>
-      <p class="cc-note">Every option has a lever, an owner and a decision date. Control and security savings must leave the bank at least as well protected.</p>
+      <h3>Interim CFO office team <span class="cc-tag cc-tag-plan">Plan</span></h3>
       <div class="cc-scroll">
-        <table class="cc-table" data-source="savings_pipeline" data-row-key="id">
-          <thead><tr><th data-field="id">Ref</th><th data-field="function">Function</th><th data-field="item">Option</th><th data-field="lever">Lever</th><th class="r" data-field="annual_saving" data-fmt="k">Annual saving</th><th class="r" data-field="one_off_cost" data-fmt="kdash">One-off cost</th><th data-field="status" data-fmt="chip">Stage</th><th data-field="owner">Owner</th><th data-field="decision_date" data-fmt="date">Decision by</th></tr></thead>
-          <tbody data-draw="tbl"></tbody>
+        <table class="cc-table">
+          <thead><tr><th>Who</th><th>Role</th><th>Coverage</th></tr></thead>
+          <tbody>
+            <tr><td>William Higgins</td><td>Project lead. Senior advice to the CEO and Board; reviews Board and DAB packs; senior back-up and escalation</td><td>Kabul 10 to 17 November, remote thereafter</td></tr>
+            <tr><td>Nipun Bhatia</td><td>Finance operating lead. Leads priorities, close and reporting day to day</td><td>From 11 November, remote first; Kabul visit TBD. Covers AIB's Saturday to Thursday week</td></tr>
+            <tr><td>Extended Finance resources</td><td>Specialist support on reconciliations, controls and audit, coordinated through Nipun</td><td>Delhi NCR, Monday to Friday; Vancouver subject to AIB approval</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
-  </section>
-
-  <!-- PROGRAMME -->
-  <section class="cc-page" id="tab-programme" data-page="programme" hidden>
-    <div class="cc-sec"><h2>Interim programme and handover</h2><span class="cc-tag cc-tag-plan">Plan</span><p>Minimum term to 9 February 2027, then monthly until the permanent CFO is appointed.</p></div>
     <div class="cc-card">
-      <h3>Programme timeline</h3>
-      <p class="cc-note">Solid bars are dates in the plan; lighter bars are indicative until AIB confirms Board, year-end and audit dates.</p>
-      <div class="cc-chart" data-draw="chart-timeline" data-source="programme_ms"></div>
+      <h3>Programme milestones</h3>
+      <p class="cc-note">William's Kabul visit and Nipun's start are confirmed. Every other date is TBD until AIB confirms Board, budget, year-end and audit dates.</p>
+      <div class="cc-scroll">
+        <table class="cc-table" data-source="programme_view" data-row-key="id">
+          <thead><tr><th data-field="workstream">Workstream</th><th data-field="milestone">Milestone</th><th data-field="owner">Owner</th><th data-field="dates">Dates</th><th data-field="basis" data-fmt="chip">Basis</th></tr></thead>
+          <tbody data-draw="tbl"></tbody>
+        </table>
+      </div>
     </div>
     <div class="cc-grid-wide">
       <div class="cc-card">
@@ -327,7 +300,7 @@
     <div class="cc-grid-wide">
       <div class="cc-card">
         <h3>Permanent CFO handover pack <span class="cc-tag cc-tag-plan">Plan</span></h3>
-        <p class="cc-note">Built from day one so the permanent CFO inherits a working Finance function. Readiness is scored by Ashish and reviewed by William.</p>
+        <p class="cc-note">Built from day one so the permanent CFO inherits a working Finance function. Readiness is scored by Nipun and reviewed by William.</p>
         <div class="cc-scroll">
           <table class="cc-table" data-source="handover_pack" data-row-key="item">
             <thead><tr><th data-field="item">Item</th><th data-field="owner">Owner</th><th data-field="pct_ready" data-fmt="bar">Ready</th><th data-field="status" data-fmt="chip">Status</th></tr></thead>
@@ -350,11 +323,11 @@
       <div class="cc-card">
         <h3>Operating rhythm <span class="cc-tag cc-tag-plan">Plan</span></h3>
         <ul class="cc-cols">
-          <li>Daily Finance check-in on Teams and a brief end-of-day exception note.</li>
-          <li>Weekly Finance team meeting, Aspiro internal quality review and a 30-minute CEO check-in.</li>
-          <li>Month-end close, then the CEO Finance report by working day 10.</li>
+          <li>Daily 15-minute Finance check-in on Teams (09:30 Kabul proposed), with blocker updates.</li>
+          <li>Weekly Finance review of priorities, close status and open actions, an Aspiro quality review and a 30-minute CEO check-in.</li>
+          <li>Monthly: ledger closed by AIB working day 5, then the CEO Finance report by working day 10.</li>
           <li>Board and DAB papers to their calendars, reviewed by William before issue.</li>
-          <li>Escalation the same day: Finance team to Ashish, Ashish to William, William to the CEO.</li>
+          <li>Escalation: AIB team leads or the on-site counterpart, then Nipun (priorities and daily decisions), then William (senior back-up), then the CEO. Material matters reach the CEO the same day.</li>
           <li>One AIB-hosted Finance operating register holds priorities, risks, decisions and aged items.</li>
         </ul>
       </div>
@@ -402,12 +375,6 @@
     </div>
   </section>
 
-  <!-- COST AND EFFICIENCY -->
-  <section class="cc-page" id="tab-cost" data-page="cost" hidden>
-    <div class="cc-sec"><h2>Cost base and efficiency</h2><span class="cc-tag cc-tag-aib">AIB reported</span><span class="cc-tag cc-tag-sample">Draft</span><p>Income, G&amp;A costs and efficiency from FY2021 to H1 2026, from AIB's reporting pack. This page keeps its own currency switch and AFN per USD rate.</p></div>
-    <iframe class="cc-frame" src="cost-efficiency.html" title="AIB cost base and efficiency" loading="lazy"></iframe>
-  </section>
-
   <!-- DATA SOURCES -->
   <section class="cc-page" id="tab-sources" data-page="sources" hidden>
     <div class="cc-sec"><h2>Where each number will come from</h2><span class="cc-tag cc-tag-plan">Plan</span><p>The connection plan for turning sample data into live data.</p></div>
@@ -428,7 +395,7 @@
 <footer class="foot">
   <div class="foot-in">
     <img src="assets/aib-logo-white.png" alt="Afghanistan International Bank" width="62" height="22">
-    <span><strong>Aspiro Management Consultants</strong> &middot; Interim Financial Support &middot; Prototype. Pages tagged AIB reported come from AIB's reporting pack; all other financial figures are sample data.</span>
+    <span><strong>Aspiro Management Consultants</strong> &middot; Interim CFO office. Pages tagged AIB reported come from AIB's reporting pack; all other financial figures are sample data.</span>
   </div>
 </footer>
 <script src="vendor/d3.min.js"></script>
@@ -438,6 +405,5 @@
 <script src="shim.js"></script>
 <script src="charts.js"></script>
 <script src="app.js"></script>
-<script src="switch.js"></script>
 </body>
 </html>

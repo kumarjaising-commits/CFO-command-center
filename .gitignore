@@ -1,2 +1,4 @@
 # AIB workbook stays local; not on GitHub
 financial_data/*.xlsx
+Artifacts/
+.DS_Store

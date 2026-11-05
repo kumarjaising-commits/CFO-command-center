@@ -6,8 +6,10 @@ Author: kjaising
 - [ ] Push the latest commits to GitHub and redeploy on Vercel
 - [ ] AI analytics: decide with AIB whether to build a live version and where its data may be processed; until then the page gives sample answers only
 - [ ] Replace placeholder `--aib-*` colours and `assets/aib-logo-white.png` with AIB's official brand kit
-- [ ] Replace the remaining sample rows in `data.js` (monthly P&L, budget, close, regulatory, savings) with live AIB feeds (fetch JSON in `shim.js`); balance sheet, ratios and headline tiles already come from the reporting pack, and programme, gates, risks and close calendar from the 25 October operating plan
-- [ ] Cost and efficiency page: decide whether to rebuild it in each design's own style rather than a frame. Both it and the dashboard use a fixed 65 AFN per USD; confirm the rate with AIB Finance
+- [ ] Replace the remaining sample rows in `data.js` (monthly P&L, budget, close, regulatory) with live AIB feeds (fetch JSON in `shim.js`); balance sheet, ratios and headline tiles already come from the reporting pack, and programme, gates, risks and close calendar from the operating plan and November CEO briefing
+- [ ] Replace each TBD date (gates, milestones, close calendar, DAB returns, audit points, budget submissions, minimum term) as AIB confirms it
+- [ ] Option 2 is inactive. Before switching it back on: remove its Discovery savings page (it reads `savings_pipeline`, now gone from `data.js`), apply the Nipun and TBD changes, drop the Cost and efficiency tab, then restore the switch in `index.html` and load `switch.js`
+- [ ] Cost and efficiency page: hidden for now (tab and frame removed; `cost-efficiency.html` kept). If it returns, decide whether to rebuild it in each design's own style rather than a frame. Both it and the dashboard use a fixed 65 AFN per USD; confirm the rate with AIB Finance
 - [ ] Ask AIB for its internal limits (liquidity, loan-to-deposit, cost-to-income, NPL) so the ratio watch can flag more than the two DAB capital minimums
 - [ ] When live data is connected, serve it from an authenticated server-side API that returns only what each page needs, instead of shipping every dataset in `data.js`
 - [ ] Add a Vercel build step that minifies `app.js`, `shim.js` and `data.js` for deployment, keeping readable source on GitHub (deters casual reading in DevTools; not real protection)
@@ -36,6 +38,7 @@ Points to settle before building:
 ## Done
 - [x] Balance sheet, eight ratios and headline tiles from AIB's reporting pack in both designs, with an AFN / USD switch; ratio watch replaces the sample-limit early warning (29 Oct 2026). Monthly P&L, forecast and budget stay sample: the pack has no monthly figures or budget
 - [x] Cost and efficiency tab (draft review page) in both designs
+- [x] Interim CFO office only (5 Nov 2026): Nipun Bhatia replaces Ashish; William is project lead; only William's Kabul visit (10 to 17 Nov) and Nipun's start (11 Nov) are dated, everything else TBD; Discovery savings pipeline, Cost and efficiency tab and Option 2 switch removed from view
 - [x] Publishing AIB's figures on the public repo and passwordless site cleared by kjaising (29 Oct 2026)
 - [x] Option 2 reads the same data as Option 1; both designs share calculations in `analytics.js`
 - [x] Period filter, comparison, chart type and measure pickers, with settings kept in the address
